@@ -1,0 +1,5 @@
+[tools]
+sass = "1.69.5"
+
+[build]
+public_url = "./"
