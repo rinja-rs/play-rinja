@@ -75,12 +75,12 @@ textarea {
 
 .top {
     display: flex;
-    column-gap: 2em;
+    column-gap: 1.5em;
     flex-wrap: wrap;
     flex-direction: row;
 
     > div {
         flex: 1;
-        min-width: 50em;
+        min-width: min(40em, 100%);
     }
 }

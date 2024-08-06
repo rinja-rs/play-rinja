@@ -1,8 +1,10 @@
-[tools]
-sass = "1.69.5"
-
 [build]
 public_url = "./"
+release = true
+inject_scripts = true
+
+[tools]
+sass = "1.69.5"
 
 [clean]
 dist = "dist"

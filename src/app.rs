@@ -120,7 +120,8 @@ fn convert_source(rust: &str, tmpl: &str) -> (String, Option<Duration>) {
     let mut code: TokenStream = parse_quote! { #[template(ext = "html", source = #tmpl)] };
     code.extend(rust.parse::<TokenStream>());
     let (code, duration) = time_it(|| derive_template(code));
-    let code = unparse(&parse2(code).unwrap_throw());
+    let mut code = unparse(&parse2(code).unwrap_throw());
+    code.truncate(code.trim_end().len());
     (code, duration)
 }
 
