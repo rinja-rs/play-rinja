@@ -7,9 +7,12 @@ body {
     background-color: #eee;
     color: #111;
     color-scheme: light only;
-    font-family: monospace;
     font-size: 1.6rem;
     line-height: 140%;
+}
+
+body, pre, textarea {
+    font-family: Hack, monospace;
 }
 
 h3 {
@@ -20,7 +23,6 @@ h3 {
 pre, textarea {
     background-color: #fff;
     color: #000;
-    font-family: monospace;
     font-size: 1.6rem;
     line-height: 140%;
     width: 100%;
