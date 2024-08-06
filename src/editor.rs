@@ -76,7 +76,8 @@ pub fn StylizedCode(props: &StylizedCodeProps) -> Html {
     let bg = theme.settings.background.unwrap_or(Color::WHITE);
     let mut highlighter = HighlightLines::new(syntax, theme);
     let mut output = Vec::new();
-    let mut rc_style: Option<Rc<str>> = None;
+    let mut last_style: Option<Rc<str>> = None;
+    let mut last_string = String::new();
 
     for line in LinesWithEndings::from(&props.text) {
         let regions = highlighter.highlight_line(line, &SYNTAX_SET).unwrap_throw();
@@ -107,12 +108,23 @@ pub fn StylizedCode(props: &StylizedCodeProps) -> Html {
                 true => None,
                 false => Some(style),
             };
-            if style.as_deref() != rc_style.as_deref() {
-                rc_style = style.map(Rc::from);
+            if style.as_deref() != last_style.as_deref() {
+                last_style = style.map(Rc::from);
             }
 
-            output.push(html!(<span style={rc_style.clone()}>{text}</span>));
+            if let Some(last_style) = last_style.clone() {
+                if !last_string.is_empty() {
+                    output.push(html!({ String::from(&last_string) }));
+                    last_string.clear();
+                }
+                output.push(html!(<span style={last_style}>{text}</span>));
+            } else {
+                last_string.push_str(text);
+            }
         }
+    }
+    if !last_string.is_empty() {
+        output.push(html!({ last_string }));
     }
 
     let style = format!(
@@ -120,7 +132,12 @@ pub fn StylizedCode(props: &StylizedCodeProps) -> Html {
         fg.r, fg.g, fg.b, bg.r, bg.g, bg.b,
     );
 
-    html!(<pre {style}> {output} {"\u{feff}"} </pre>)
+    html! {
+        <pre {style}>
+            {output}
+            {"\u{feff}"}
+        </pre>
+    }
 }
 
 #[derive(Properties, PartialEq)]
