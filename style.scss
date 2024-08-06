@@ -31,6 +31,11 @@ pre, textarea {
         radius: 0.2rem;
     }
     padding: 0.4rem;
+    line-break: normal;
+    white-space: break-spaces;
+    word-wrap: break-word;
+    word-break: break-word;
+    text-wrap: wrap;
 }
 
 textarea {
