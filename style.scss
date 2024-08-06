@@ -1,0 +1,81 @@
+html {
+    font-size: 62.5%;
+}
+
+body {
+    padding: 0.5em 1em;
+    background-color: #eee;
+    color: #111;
+    color-scheme: light only;
+    font-family: monospace;
+    font-size: 1.6rem;
+    line-height: 140%;
+}
+
+h3 {
+    text-align: center;
+    font-size: 100%;
+}
+
+pre, textarea {
+    background-color: #fff;
+    color: #000;
+    font-family: monospace;
+    font-size: 1.6rem;
+    line-height: 140%;
+    width: 100%;
+    border: {
+        width: 0.1rem;
+        style: solid;
+        color: #666;
+        radius: 0.2rem;
+    }
+    padding: 0.4rem;
+}
+
+textarea {
+    overflow: scroll;
+    width: 100%;
+    height: 15em;
+    min-height: 5em;
+    resize: vertical;
+}
+
+.editor {
+    position: relative;
+    z-index: 0;
+
+    textarea {
+        z-index: 2;
+        position: absolute;
+        inset: 0;
+        height: unset;
+        min-height: unset;
+        caret-color: #000;
+
+        overflow: hidden;
+        background-color: transparent;
+        color: transparent;
+        border-color: transparent;
+        resize: none;
+    }
+
+    pre {
+        z-index: 1;
+        position: relative;
+        pointer-events: none;
+        min-height: 3em;
+    }
+}
+
+.top {
+    display: flex;
+    column-gap: 2em;
+    flex-wrap: wrap;
+    flex-direction: row;
+
+    > div {
+        flex: 1;
+        min-width: 50em;
+    }
+}
