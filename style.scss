@@ -38,10 +38,10 @@ pre, textarea {
     word-wrap: break-word;
     word-break: break-word;
     text-wrap: wrap;
+    overflow: hidden;
 }
 
 textarea {
-    overflow: scroll;
     width: 100%;
     height: 15em;
     min-height: 5em;
@@ -60,7 +60,6 @@ textarea {
         min-height: unset;
         caret-color: #000;
 
-        overflow: hidden;
         background-color: transparent;
         color: transparent;
         border-color: transparent;
