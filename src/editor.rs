@@ -14,7 +14,7 @@ use yew::{function_component, html, Callback, Html, InputEvent, Properties};
 pub struct EditorProps {
     pub text: Rc<str>,
     #[prop_or_default]
-    pub oninput: Callback<String>,
+    pub oninput: Option<Callback<String>>,
     pub syntax: &'static str,
 }
 
