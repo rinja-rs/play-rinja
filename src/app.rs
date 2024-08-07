@@ -6,16 +6,19 @@ use proc_macro2::TokenStream;
 use rinja_derive_standalone::derive_template;
 use syn::{parse2, parse_quote};
 use web_sys::wasm_bindgen::prelude::Closure;
-use web_sys::wasm_bindgen::{JsCast, UnwrapThrowExt};
-use web_sys::window;
+use web_sys::wasm_bindgen::JsCast;
+use web_sys::{window, HtmlSelectElement};
 use yew::{
-    function_component, html, use_state, Callback, Html, Properties, SubmitEvent, UseStateHandle,
+    function_component, html, use_state, Callback, Event, Html, Properties, SubmitEvent,
+    UseStateHandle,
 };
 
 use crate::editor::Editor;
+use crate::{ThrowAt, ASSETS};
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
+    theme: usize,
     rust: Rc<str>,
     tmpl: Rc<str>,
     code: Rc<str>,
@@ -26,8 +29,14 @@ pub struct Props {
 #[function_component]
 pub fn App() -> Html {
     let state = use_state(|| {
+        let theme = ASSETS
+            .1
+            .iter()
+            .position(|&(theme, _)| theme == "Monokai Extended Bright")
+            .unwrap_or_default();
         let (code, duration) = convert_source(STRUCT_SOURCE, TMPL_SOURCE);
         Props {
+            theme,
             rust: Rc::from(STRUCT_SOURCE),
             tmpl: Rc::from(TMPL_SOURCE),
             code: Rc::from(code),
@@ -55,6 +64,49 @@ pub fn App() -> Html {
     let oninput_rust = oninput(|new_state, data| new_state.rust = Rc::from(data));
     let oninput_tmpl = oninput(|new_state, data| new_state.tmpl = Rc::from(data));
 
+    let theme_idx = state.theme;
+    let (_, themes) = *ASSETS;
+    let (_, theme) = themes[theme_idx];
+
+    let themes = themes
+        .iter()
+        .copied()
+        .enumerate()
+        .map(|(i, (value, _))| {
+            html! {
+                <option
+                    value={i.to_string()}
+                    selected={i == theme_idx}
+                >
+                    {value}
+                </option>
+            }
+        })
+        .collect::<Html>();
+
+    let onchange_theme = Callback::from({
+        let state = state.clone();
+        move |ev: Event| {
+            let Some(target) = ev.target() else {
+                return;
+            };
+            let target: HtmlSelectElement = target.unchecked_into();
+            let Ok(theme) = target.selected_index().try_into() else {
+                return;
+            };
+
+            let old_state = &*state;
+            state.set(Props {
+                theme,
+                rust: Rc::clone(&old_state.rust),
+                tmpl: Rc::clone(&old_state.tmpl),
+                code: Rc::clone(&old_state.code),
+                duration: old_state.duration,
+                timeout: old_state.timeout,
+            });
+        }
+    });
+
     html! {
         <form method="GET" action="javascript:;" {onsubmit}>
             <div class="top">
@@ -64,6 +116,7 @@ pub fn App() -> Html {
                         text={Rc::clone(&state.rust)}
                         oninput={oninput_rust}
                         syntax="Rust"
+                        {theme}
                     />
                 </div>
                 <div>
@@ -71,17 +124,24 @@ pub fn App() -> Html {
                     <Editor
                         text={Rc::clone(&state.tmpl)}
                         oninput={oninput_tmpl}
-                        syntax="HTML"
+                        syntax="HTML (Jinja2)"
+                        {theme}
                     />
                 </div>
             </div>
-
             <div>
                 <h3> {"Generated code:"} {duration} </h3>
                 <Editor
                     text={Rc::clone(&state.code)}
                     syntax="Rust"
+                        {theme}
                 />
+            </div>
+            <div>
+                <label>
+                    <strong> {"Theme: "} </strong>
+                    <select onchange={onchange_theme}> {themes} </select>
+                </label>
             </div>
         </form>
     }
@@ -89,12 +149,14 @@ pub fn App() -> Html {
 
 fn replace_timeout(new_state: &mut Props, state: UseStateHandle<Props>) {
     let handler = Closure::<dyn Fn()>::new({
+        let theme = new_state.theme;
         let rust = Rc::clone(&new_state.rust);
         let tmpl = Rc::clone(&new_state.tmpl);
         let state = state.clone();
         move || {
             let (code, duration) = convert_source(&rust, &tmpl);
             state.set(Props {
+                theme,
                 rust: Rc::clone(&rust),
                 tmpl: Rc::clone(&tmpl),
                 code: Rc::from(code),
@@ -104,7 +166,7 @@ fn replace_timeout(new_state: &mut Props, state: UseStateHandle<Props>) {
         }
     });
 
-    let window = window().unwrap_throw();
+    let window = window().unwrap_at();
     if let Some(timeout) = new_state.timeout {
         window.clear_timeout_with_handle(timeout);
     }
@@ -120,13 +182,13 @@ fn convert_source(rust: &str, tmpl: &str) -> (String, Option<Duration>) {
     let mut code: TokenStream = parse_quote! { #[template(ext = "html", source = #tmpl)] };
     code.extend(rust.parse::<TokenStream>());
     let (code, duration) = time_it(|| derive_template(code));
-    let mut code = unparse(&parse2(code).unwrap_throw());
+    let mut code = unparse(&parse2(code).unwrap_at());
     code.truncate(code.trim_end().len());
     (code, duration)
 }
 
 fn time_it<F: FnOnce() -> R, R>(func: F) -> (R, Option<Duration>) {
-    let performance = window().unwrap_throw().performance();
+    let performance = window().unwrap_at().performance();
     let start = performance.as_ref().map(|p| p.now());
     let result = func();
     let end = performance.as_ref().map(|p| p.now());

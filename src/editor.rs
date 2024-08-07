@@ -1,34 +1,36 @@
 use std::fmt::Write;
 use std::rc::Rc;
 
-use once_cell::sync::Lazy;
 use syntect::easy::HighlightLines;
-use syntect::highlighting::{Color, FontStyle, ThemeSet};
-use syntect::parsing::SyntaxSet;
+use syntect::highlighting::{Color, FontStyle, Theme};
 use syntect::util::LinesWithEndings;
-use web_sys::wasm_bindgen::{JsCast, UnwrapThrowExt};
+use web_sys::wasm_bindgen::JsCast;
 use web_sys::HtmlTextAreaElement;
 use yew::{function_component, html, Callback, Html, InputEvent, Properties};
+
+use crate::{ThrowAt, ASSETS};
 
 #[derive(Properties, PartialEq)]
 pub struct EditorProps {
     pub text: Rc<str>,
+    pub syntax: &'static str,
+    pub theme: &'static Theme,
     #[prop_or_default]
     pub oninput: Option<Callback<String>>,
-    pub syntax: &'static str,
 }
 
 #[function_component]
 pub fn Editor(props: &EditorProps) -> Html {
     let EditorProps {
         text,
-        oninput,
         syntax,
+        theme,
+        oninput,
     } = props;
     html! {
         <div class="editor">
-            <UnstylizedCode text={Rc::clone(text)} {oninput} />
-            <StylizedCode text={Rc::clone(text)} syntax={*syntax} />
+            <UnstylizedCode text={Rc::clone(text)} theme={*theme} {oninput} />
+            <StylizedCode text={Rc::clone(text)} syntax={*syntax} theme={*theme} />
         </div>
     }
 }
@@ -36,6 +38,7 @@ pub fn Editor(props: &EditorProps) -> Html {
 #[derive(Properties, PartialEq)]
 pub struct UnstylizedCodeProps {
     pub text: Rc<str>,
+    pub theme: &'static Theme,
     #[prop_or_default]
     pub oninput: Option<Callback<String>>,
 }
@@ -56,12 +59,19 @@ pub fn UnstylizedCode(props: &UnstylizedCodeProps) -> Html {
         })
     });
 
+    let settings = &props.theme.settings;
+    let caret = settings
+        .caret
+        .or(settings.foreground)
+        .unwrap_or(Color::BLACK);
+
     html! {
         <textarea
             autocapitalize="off"
             spellcheck="false"
             readonly={oninput.is_none()}
             value={Rc::clone(&props.text)}
+            style={format!("caret-color:#{:02x}{:02x}{:02x};", caret.r, caret.b, caret.b)}
             {oninput}
         />
     }
@@ -69,9 +79,10 @@ pub fn UnstylizedCode(props: &UnstylizedCodeProps) -> Html {
 
 #[function_component]
 pub fn StylizedCode(props: &StylizedCodeProps) -> Html {
-    let syntax = SYNTAX_SET.find_syntax_by_name(props.syntax).unwrap_throw();
-    let theme = &THEME_SET.themes["InspiredGitHub"];
+    let (syntax_set, _) = *ASSETS;
+    let syntax = syntax_set.find_syntax_by_name(props.syntax).unwrap_at();
 
+    let theme = props.theme;
     let fg = theme.settings.foreground.unwrap_or(Color::BLACK);
     let bg = theme.settings.background.unwrap_or(Color::WHITE);
     let mut highlighter = HighlightLines::new(syntax, theme);
@@ -80,7 +91,7 @@ pub fn StylizedCode(props: &StylizedCodeProps) -> Html {
     let mut last_string = String::new();
 
     for line in LinesWithEndings::from(&props.text) {
-        let regions = highlighter.highlight_line(line, &SYNTAX_SET).unwrap_throw();
+        let regions = highlighter.highlight_line(line, syntax_set).unwrap_at();
         for (s, text) in regions {
             let mut style = String::new();
 
@@ -144,15 +155,13 @@ pub fn StylizedCode(props: &StylizedCodeProps) -> Html {
 pub struct StylizedCodeProps {
     pub text: Rc<str>,
     pub syntax: &'static str,
+    pub theme: &'static Theme,
 }
 
 fn write_css_color(s: &mut String, c: Color) {
     if c.a != 0xFF {
-        write!(s, "#{:02x}{:02x}{:02x}{:02x}", c.r, c.g, c.b, c.a).unwrap_throw();
+        write!(s, "#{:02x}{:02x}{:02x}{:02x}", c.r, c.g, c.b, c.a).unwrap_at();
     } else {
-        write!(s, "#{:02x}{:02x}{:02x}", c.r, c.g, c.b).unwrap_throw();
+        write!(s, "#{:02x}{:02x}{:02x}", c.r, c.g, c.b).unwrap_at();
     }
 }
-
-static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
-static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
