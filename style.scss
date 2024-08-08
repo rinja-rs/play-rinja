@@ -11,6 +11,11 @@ body {
     line-height: 140%;
 }
 
+a:is(:link, :visited, :target) {
+    color: #33c;
+    text-decoration: underline;
+}
+
 body, pre, textarea {
     font-family: Hack, monospace;
 }
@@ -71,6 +76,17 @@ textarea {
         position: relative;
         pointer-events: none;
         min-height: 3em;
+    }
+
+    &:is(:focus, :focus-visible, :focus-within) {
+        textarea {
+            outline: {
+                offset: 0;
+                width: 0.1rem;
+                style: solid;
+                color: #c33;
+            }
+        }
     }
 }
 

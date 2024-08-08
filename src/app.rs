@@ -138,9 +138,11 @@ pub fn App() -> Html {
                 />
             </div>
             <div id="rev">
-                <abbr title="Rinja revision">
-                    {env!("RINJA_REV")}
-                </abbr>
+                <a href={TREE_URL} target="_blank" rel="noopener">
+                    <abbr title="Rinja revision">
+                        {env!("RINJA_DESCR")}
+                    </abbr>
+                </a>
             </div>
             <div>
                 <label>
@@ -205,6 +207,8 @@ fn time_it<F: FnOnce() -> R, R>(func: F) -> (R, Option<Duration>) {
 }
 
 const DEFAULT_THEME: &str = "Monokai Extended Origin";
+
+const TREE_URL: &str = concat!(env!("RINJA_URL"), "/tree/", env!("RINJA_REV"));
 
 const TMPL_SOURCE: &str = r##"<div class="example-wrap"> {# #}
     <div data-nosnippet><pre class="src-line-numbers">
