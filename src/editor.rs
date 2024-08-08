@@ -87,14 +87,13 @@ pub fn StylizedCode(props: &StylizedCodeProps) -> Html {
     let bg = theme.settings.background.unwrap_or(Color::WHITE);
     let mut highlighter = HighlightLines::new(syntax, theme);
     let mut output = Vec::new();
-    let mut last_style: Option<Rc<str>> = None;
-    let mut last_string = String::new();
+    let mut cur_style = String::new();
+    let mut accu_string = String::new();
 
     for line in LinesWithEndings::from(&props.text) {
         let regions = highlighter.highlight_line(line, syntax_set).unwrap_at();
         for (s, text) in regions {
             let mut style = String::new();
-
             if s.foreground != fg {
                 style.push_str("color:");
                 write_css_color(&mut style, s.foreground);
@@ -115,27 +114,29 @@ pub fn StylizedCode(props: &StylizedCodeProps) -> Html {
                 style.push_str("font-style:italic;");
             }
 
-            let style = match style.is_empty() {
-                true => None,
-                false => Some(style),
-            };
-            if style.as_deref() != last_style.as_deref() {
-                last_style = style.map(Rc::from);
-            }
-
-            if let Some(last_style) = last_style.clone() {
-                if !last_string.is_empty() {
-                    output.push(html!({ String::from(&last_string) }));
-                    last_string.clear();
+            if style == cur_style {
+                accu_string.push_str(text);
+            } else if !accu_string.is_empty() {
+                if cur_style.is_empty() {
+                    output.push(html!({ accu_string.to_owned() }));
+                } else {
+                    output.push(html! {
+                        <span style={cur_style.to_owned()}> {accu_string.to_owned()} </span>
+                    });
                 }
-                output.push(html!(<span style={last_style}>{text}</span>));
-            } else {
-                last_string.push_str(text);
+
+                accu_string.clear();
+                accu_string.push_str(text);
+                cur_style = style;
             }
         }
     }
-    if !last_string.is_empty() {
-        output.push(html!({ last_string }));
+    if !accu_string.is_empty() {
+        if cur_style.is_empty() {
+            output.push(html!({ accu_string }));
+        } else {
+            output.push(html!(<span style={cur_style}>{accu_string}</span>));
+        }
     }
 
     let style = format!(
