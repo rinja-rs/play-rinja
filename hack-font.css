@@ -2,8 +2,6 @@
  *  Hack typeface https://github.com/source-foundry/Hack
  *  License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
  */
-/* FONT PATHS
- * -------------------------- */
 @font-face {
   font-family: 'Hack';
   src: url("hack-font/hack-regular.woff2?sha=3114f1256") format("woff2");
@@ -31,4 +29,3 @@
   font-weight: 700;
   font-style: italic;
 }
-

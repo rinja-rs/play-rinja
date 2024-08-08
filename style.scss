@@ -21,8 +21,8 @@ h3 {
 }
 
 pre, textarea {
-    background-color: #fff;
-    color: #000;
+    background-color: #eee;
+    color: #111;
     font-size: 1.6rem;
     line-height: 140%;
     width: 100%;
@@ -84,4 +84,10 @@ textarea {
         flex: 1;
         min-width: min(40em, 100%);
     }
+}
+
+#rev {
+    float: right;
+    font-size: 80%;
+    color: #666;
 }

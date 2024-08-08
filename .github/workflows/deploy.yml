@@ -23,7 +23,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+        with:
+          submodules: false
+
+      - name: Update rinja
+        run: |
+          git submodule init
+          git submodule sync
+          git submodule update --remote --no-recommend-shallow
+
       - name: Install rust
         uses: dtolnay/rust-toolchain@master
         with:

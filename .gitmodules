@@ -1,0 +1,4 @@
+[submodule "rinja"]
+	path = rinja
+	url = https://github.com/rinja-rs/rinja
+	branch = master

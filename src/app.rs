@@ -32,7 +32,7 @@ pub fn App() -> Html {
         let theme = ASSETS
             .1
             .iter()
-            .position(|&(theme, _)| theme == "Monokai Extended Bright")
+            .position(|&(theme, _)| theme == DEFAULT_THEME)
             .unwrap_or_default();
         let (code, duration) = convert_source(STRUCT_SOURCE, TMPL_SOURCE);
         Props {
@@ -137,6 +137,11 @@ pub fn App() -> Html {
                         {theme}
                 />
             </div>
+            <div id="rev">
+                <abbr title="Rinja revision">
+                    {env!("RINJA_REV")}
+                </abbr>
+            </div>
             <div>
                 <label>
                     <strong> {"Theme: "} </strong>
@@ -198,6 +203,8 @@ fn time_it<F: FnOnce() -> R, R>(func: F) -> (R, Option<Duration>) {
     };
     (result, duration)
 }
+
+const DEFAULT_THEME: &str = "Monokai Extended Origin";
 
 const TMPL_SOURCE: &str = r##"<div class="example-wrap"> {# #}
     <div data-nosnippet><pre class="src-line-numbers">
