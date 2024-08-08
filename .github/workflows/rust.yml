@@ -138,7 +138,7 @@ jobs:
           sarif_file: devskim-results.sarif
 
   deploy:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     needs:
       - Build
       - Clippy
