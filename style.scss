@@ -112,3 +112,38 @@ textarea {
     padding-top: 1em;
     text-align: center;
 }
+
+#fork {
+    position: absolute;
+    inset: 0 0 auto auto;
+
+    svg {
+        border: {
+            style: none;
+            width: 0;
+            color: transparent
+        }
+        color: #eee;
+        fill: #4c1;
+        width: 3em;
+        height: 3em;
+    }
+
+    .octo-arm {
+        transform-origin: 130px 106px 0px;
+    }
+    &:hover .octo-arm {
+        animation: octocat-wave 560ms ease-in-out;
+    }
+    @keyframes octocat-wave {
+        0%, 100% {
+            transform: rotate(0)
+        }
+        20%, 60% {
+            transform: rotate(-25deg)
+        }
+        40%, 80% {
+            transform: rotate(10deg)
+        }
+    }
+}
