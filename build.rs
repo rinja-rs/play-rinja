@@ -23,7 +23,7 @@ fn main() {
 fn git_run(var: &str, cwd: &Path, args: impl IntoIterator<Item: AsRef<OsStr>>) {
     let output = Command::new("git")
         .args(args)
-        .current_dir(&cwd)
+        .current_dir(cwd)
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .output()
