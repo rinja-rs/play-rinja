@@ -109,7 +109,7 @@ pub fn App() -> Html {
 
     html! {
         <form method="GET" action="javascript:;" {onsubmit}>
-            <div class="top">
+            <div id="top">
                 <div>
                     <h3> {"Your struct:"} </h3>
                     <Editor
@@ -149,6 +149,39 @@ pub fn App() -> Html {
                     <strong> {"Theme: "} </strong>
                     <select onchange={onchange_theme}> {themes} </select>
                 </label>
+            </div>
+            <div id="bottom">
+                <a href="https://crates.io/crates/rinja" title="Crates.io">
+                    <img
+                        src="https://img.shields.io/crates/v/rinja?logo=rust&style=flat-square&logoColor=white"
+                        alt="Crates.io"
+                    />
+                </a>
+                {" "}
+                <a
+                    href="https://github.com/rinja-rs/rinja/actions/workflows/rust.yml"
+                    title="GitHub Workflow Status"
+                >
+                    <img
+                        src="https://img.shields.io/github/actions/workflow/status/rinja-rs/rinja/rust.yml?\
+                             branch=master&logo=github&style=flat-square&logoColor=white"
+                        alt="GitHub Workflow Status"
+                    />
+                </a>
+                {" "}
+                <a href="https://rinja.readthedocs.io/" title="Book">
+                    <img
+                        src="https://img.shields.io/readthedocs/rinja?label=book&logo=readthedocs&style=flat-square&logoColor=white"
+                        alt="Book"
+                    />
+                </a>
+                {" "}
+                <a href="https://docs.rs/rinja/" title="docs.rs">
+                    <img
+                        src="https://img.shields.io/docsrs/rinja?logo=docsdotrs&style=flat-square&logoColor=white"
+                        alt="docs.rs"
+                    />
+                </a>
             </div>
         </form>
     }
@@ -210,30 +243,16 @@ const DEFAULT_THEME: &str = "Monokai Extended Origin";
 
 const TREE_URL: &str = concat!(env!("RINJA_URL"), "/tree/", env!("RINJA_REV"));
 
-const TMPL_SOURCE: &str = r##"<div class="example-wrap"> {# #}
-    <div data-nosnippet><pre class="src-line-numbers">
-        {% for line in lines.clone() %}
-            {% if embedded %}
-                <span>{{line|safe}}</span>
-            {%~ else %}
-                <a href="#{{line|safe}}" id="{{line|safe}}">{{line|safe}}</a>
-            {%~ endif %}
-        {% endfor %}
-    </pre></div> {# #}
-    <pre class="rust"> {# #}
-        <code>
-            {% if needs_expansion %}
-                <button class="expand">&varr;</button>
-            {% endif %}
-            {{code_html|safe}}
-        </code> {# #}
-    </pre> {# #}
+const TMPL_SOURCE: &str = r##"<div class="example">
+    Hello, <strong>{{user}}</strong>!
+    {%~ if first_visit -%}
+        <br />
+        Nice to meet you.
+    {%~ endif -%}
 </div>"##;
 
 const STRUCT_SOURCE: &str = r##"#[template(ext = "html")] // source="…" is provided for you
-struct Source<Code: std::fmt::Display> {
-    embedded: bool,
-    needs_expansion: bool,
-    lines: RangeInclusive<usize>,
-    code_html: Code,
+struct HelloWorld<'a> {
+    user: &'a str,
+    first_visit: bool,
 }"##;

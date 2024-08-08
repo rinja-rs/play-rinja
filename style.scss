@@ -90,7 +90,7 @@ textarea {
     }
 }
 
-.top {
+#top {
     display: flex;
     column-gap: 1.5em;
     flex-wrap: wrap;
@@ -106,4 +106,9 @@ textarea {
     float: right;
     font-size: 80%;
     color: #666;
+}
+
+#bottom {
+    padding-top: 1em;
+    text-align: center;
 }
