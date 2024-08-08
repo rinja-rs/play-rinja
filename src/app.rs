@@ -251,7 +251,9 @@ const TMPL_SOURCE: &str = r##"<div class="example">
     {%~ endif -%}
 </div>"##;
 
-const STRUCT_SOURCE: &str = r##"#[template(ext = "html")] // source="…" is provided for you
+const STRUCT_SOURCE: &str = r##"#[derive(Template)]
+#[template(ext = "html")]
+// in the preview, the `source="…"` or `path="…"` argument is provided for you
 struct HelloWorld<'a> {
     user: &'a str,
     first_visit: bool,
