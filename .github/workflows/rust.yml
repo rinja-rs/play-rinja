@@ -9,7 +9,32 @@ on:
     - cron: "32 4 * * 5"
 
 jobs:
+  Fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Update rinja
+        run: |
+          git submodule init
+          git submodule sync
+          git submodule update --remote --no-recommend-shallow
+
+      - name: Install rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          components: rustfmt
+
+      - name: fmt
+        run: cargo fmt -- --check
+
   Build:
+    needs:
+      - Fmt
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -38,6 +63,8 @@ jobs:
         run: trunk build
 
   Clippy:
+    needs:
+      - Fmt
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -60,30 +87,9 @@ jobs:
       - name: clippy
         run: cargo clippy -- -D warnings
 
-  Fmt:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: false
-
-      - name: Update rinja
-        run: |
-          git submodule init
-          git submodule sync
-          git submodule update --remote --no-recommend-shallow
-
-      - name: Install rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly
-          components: rustfmt
-
-      - name: fmt
-        run: cargo fmt -- --check
-
   Audit:
+    needs:
+      - Fmt
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -102,7 +108,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  DevSkim:
+  devskim:
+    needs:
+      - Fmt
+    name: DevSkim
     runs-on: ubuntu-20.04
     permissions:
       actions: read
@@ -135,7 +144,7 @@ jobs:
       - Clippy
       - Fmt
       - Audit
-      - DevSkim
+      - devskim
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
