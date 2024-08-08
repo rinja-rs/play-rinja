@@ -1,0 +1,182 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: "32 4 * * 5"
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Update rinja
+        run: |
+          git submodule init
+          git submodule sync
+          git submodule update --remote --no-recommend-shallow
+
+      - name: Install rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+
+      - name: Install trunk
+        uses: taiki-e/install-action@v2
+        with:
+          tool: trunk@0.20.2
+
+      - name: Compile project
+        run: trunk build
+
+  Clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Update rinja
+        run: |
+          git submodule init
+          git submodule sync
+          git submodule update --remote --no-recommend-shallow
+
+      - name: Install rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: clippy
+
+      - name: clippy
+        run: cargo clippy -- -D warnings
+
+  Fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Update rinja
+        run: |
+          git submodule init
+          git submodule sync
+          git submodule update --remote --no-recommend-shallow
+
+      - name: Install rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          components: rustfmt
+
+      - name: fmt
+        run: cargo fmt -- --check
+
+  Audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Update rinja
+        run: |
+          git submodule init
+          git submodule sync
+          git submodule update --remote --no-recommend-shallow
+
+      - name: Audit
+        uses: actions-rs/audit-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  DevSkim:
+    runs-on: ubuntu-20.04
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Update rinja
+        run: |
+          git submodule init
+          git submodule sync
+          git submodule update --remote --no-recommend-shallow
+
+      - name: Run DevSkim scanner
+        uses: microsoft/DevSkim-Action@v1
+
+      - name: Upload DevSkim scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: devskim-results.sarif
+
+  deploy:
+    if: github.ref == 'refs/heads/master'
+    needs:
+      - Build
+      - Clippy
+      - Fmt
+      - Audit
+      - DevSkim
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Update rinja
+        run: |
+          git submodule init
+          git submodule sync
+          git submodule update --remote --no-recommend-shallow
+
+      - name: Install rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+
+      - name: Install trunk
+        uses: taiki-e/install-action@v2
+        with:
+          tool: trunk@0.20.2
+
+      - name: Compile project
+        run: trunk build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'dist'
+
+      - name: Wait
+        uses: NathanFirmo/wait-for-other-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: 'rust.yml'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
