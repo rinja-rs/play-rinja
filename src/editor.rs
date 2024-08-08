@@ -116,16 +116,17 @@ pub fn StylizedCode(props: &StylizedCodeProps) -> Html {
 
             if style == cur_style {
                 accu_string.push_str(text);
-            } else if !accu_string.is_empty() {
-                if cur_style.is_empty() {
-                    output.push(html!({ accu_string.to_owned() }));
-                } else {
-                    output.push(html! {
-                        <span style={cur_style.to_owned()}> {accu_string.to_owned()} </span>
-                    });
+            } else {
+                if !accu_string.is_empty() {
+                    if cur_style.is_empty() {
+                        output.push(html!({ accu_string.to_owned() }));
+                    } else {
+                        output.push(html! {
+                            <span style={cur_style.to_owned()}> {accu_string.to_owned()} </span>
+                        });
+                    }
+                    accu_string.clear();
                 }
-
-                accu_string.clear();
                 accu_string.push_str(text);
                 cur_style = style;
             }
@@ -146,8 +147,7 @@ pub fn StylizedCode(props: &StylizedCodeProps) -> Html {
 
     html! {
         <pre {style}>
-            {output}
-            {"\u{feff}"}
+            {"\u{feff}"} {output} {"\u{feff}"}
         </pre>
     }
 }

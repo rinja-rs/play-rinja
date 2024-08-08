@@ -186,7 +186,7 @@ fn replace_timeout(new_state: &mut Props, state: UseStateHandle<Props>) {
 }
 
 fn convert_source(rust: &str, tmpl: &str) -> (String, Option<Duration>) {
-    let mut code: TokenStream = parse_quote! { #[template(ext = "html", source = #tmpl)] };
+    let mut code: TokenStream = parse_quote! { #[template(source = #tmpl)] };
     code.extend(rust.parse::<TokenStream>());
     let (code, duration) = time_it(|| derive_template(code));
     let mut code = unparse(&parse2(code).unwrap_at());
@@ -230,7 +230,8 @@ const TMPL_SOURCE: &str = r##"<div class="example-wrap"> {# #}
     </pre> {# #}
 </div>"##;
 
-const STRUCT_SOURCE: &str = r##"struct Source<Code: std::fmt::Display> {
+const STRUCT_SOURCE: &str = r##"#[template(ext = "html")] // source="…" is provided for you
+struct Source<Code: std::fmt::Display> {
     embedded: bool,
     needs_expansion: bool,
     lines: RangeInclusive<usize>,
