@@ -117,9 +117,7 @@ jobs:
           git submodule update --remote --no-recommend-shallow
 
       - name: Audit
-        uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        uses: EmbarkStudios/cargo-deny-action@v1
 
   devskim:
     needs:
