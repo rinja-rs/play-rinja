@@ -18,7 +18,7 @@ use crate::{ThrowAt, ASSETS};
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
-    theme: usize,
+    theme: Rc<str>,
     rust: Rc<str>,
     tmpl: Rc<str>,
     code: Rc<str>,
@@ -34,6 +34,10 @@ fn local_storage() -> Option<Storage> {
     }
 }
 
+const THEME_SOURCE_KEY: &str = "theme";
+const STRUCT_SOURCE_KEY: &str = "struct";
+const TMPL_SOURCE_KEY: &str = "template";
+
 fn get_data_from_local_storage(storage: &Storage, key: &str) -> Option<String> {
     storage.get_item(key).ok()?
 }
@@ -41,41 +45,26 @@ fn get_data_from_local_storage(storage: &Storage, key: &str) -> Option<String> {
 #[function_component]
 pub fn App() -> Html {
     let state = use_state(|| {
-        let tmp;
-        let tmp2;
-        let (struct_source, template_source) = if let Some(storage) = local_storage() {
-            let struct_source =
-                match get_data_from_local_storage(&storage, "rinja-app-struct-source") {
-                    Some(source) => {
-                        tmp = source;
-                        &tmp
-                    }
-                    _ => STRUCT_SOURCE,
-                };
-            let template_source =
-                match get_data_from_local_storage(&storage, "rinja-app-template-source") {
-                    Some(source) => {
-                        tmp2 = source;
-                        &tmp2
-                    }
-                    _ => TMPL_SOURCE,
-                };
-            (struct_source, template_source)
-        } else {
-            (STRUCT_SOURCE, TMPL_SOURCE)
+        let local_storage = local_storage();
+        let local_storage_or = |default: &str, key: &str| -> Rc<str> {
+            let value = local_storage
+                .as_ref()
+                .and_then(|ls| get_data_from_local_storage(ls, key));
+            Rc::from(match value.as_deref().unwrap_or_default() {
+                "" => default,
+                value => value,
+            })
         };
-        let (code, duration) = convert_source(struct_source, template_source);
 
-        let theme = ASSETS
-            .1
-            .iter()
-            .position(|&(theme, _)| theme == DEFAULT_THEME)
-            .unwrap_or_default();
+        let theme = local_storage_or(DEFAULT_THEME, THEME_SOURCE_KEY);
+        let rust = local_storage_or(STRUCT_SOURCE, STRUCT_SOURCE_KEY);
+        let tmpl = local_storage_or(TMPL_SOURCE, TMPL_SOURCE_KEY);
 
+        let (code, duration) = convert_source(&rust, &tmpl);
         Props {
             theme,
-            rust: Rc::from(struct_source),
-            tmpl: Rc::from(template_source),
+            rust,
+            tmpl,
             code: Rc::from(code),
             duration,
             timeout: None,
@@ -103,16 +92,49 @@ pub fn App() -> Html {
             state.set(new_state);
         }
     };
-    let oninput_rust = oninput("rinja-app-struct-source", |new_state, data| {
-        new_state.rust = Rc::from(data)
+    let oninput_rust = oninput(STRUCT_SOURCE_KEY, |new_state, data| {
+        new_state.rust = Rc::from(data);
     });
-    let oninput_tmpl = oninput("rinja-app-template-source", |new_state, data| {
-        new_state.tmpl = Rc::from(data)
+    let oninput_tmpl = oninput(TMPL_SOURCE_KEY, |new_state, data| {
+        new_state.tmpl = Rc::from(data);
     });
 
-    let theme_idx = state.theme;
+    let onchange_theme = {
+        let state = state.clone();
+        move |ev: Event| {
+            let Some(target) = ev.target() else {
+                return;
+            };
+            let target: HtmlSelectElement = target.unchecked_into();
+            let data = target.value();
+
+            if let Some(storage) = local_storage() {
+                // Doesn't matter whether or not it succeeded.
+                let _ = storage.set_item(THEME_SOURCE_KEY, &data);
+            }
+            state.set(Props {
+                theme: data.into(),
+                ..Props::clone(&state)
+            })
+        }
+    };
+
+    let theme = state.theme.as_ref();
     let (_, themes) = *ASSETS;
-    let (_, theme) = themes[theme_idx];
+    let (theme_idx, theme) = match themes
+        .iter()
+        .enumerate()
+        .find_map(|(idx, &(key, value))| (key == theme).then_some((idx, value)))
+    {
+        Some((theme_idx, theme)) => (theme_idx, theme),
+        None => {
+            state.set(Props {
+                theme: DEFAULT_THEME.into(),
+                ..Props::clone(&state)
+            });
+            (0, themes[0].1) // index does not matter, will be rerendered immediately
+        }
+    };
 
     let themes = themes
         .iter()
@@ -120,38 +142,12 @@ pub fn App() -> Html {
         .enumerate()
         .map(|(i, (value, _))| {
             html! {
-                <option
-                    value={i.to_string()}
-                    selected={i == theme_idx}
-                >
+                <option value={value} selected={i == theme_idx}>
                     {value}
                 </option>
             }
         })
         .collect::<Html>();
-
-    let onchange_theme = Callback::from({
-        let state = state.clone();
-        move |ev: Event| {
-            let Some(target) = ev.target() else {
-                return;
-            };
-            let target: HtmlSelectElement = target.unchecked_into();
-            let Ok(theme) = target.selected_index().try_into() else {
-                return;
-            };
-
-            let old_state = &*state;
-            state.set(Props {
-                theme,
-                rust: Rc::clone(&old_state.rust),
-                tmpl: Rc::clone(&old_state.tmpl),
-                code: Rc::clone(&old_state.code),
-                duration: old_state.duration,
-                timeout: old_state.timeout,
-            });
-        }
-    });
 
     html! {
         <form method="GET" action="javascript:;" {onsubmit}>
@@ -180,7 +176,7 @@ pub fn App() -> Html {
                 <Editor
                     text={Rc::clone(&state.code)}
                     syntax="Rust"
-                        {theme}
+                    {theme}
                 />
             </div>
             <div id="rev">
@@ -244,14 +240,14 @@ pub fn App() -> Html {
 
 fn replace_timeout(new_state: &mut Props, state: UseStateHandle<Props>) {
     let handler = Closure::<dyn Fn()>::new({
-        let theme = new_state.theme;
+        let theme = Rc::clone(&new_state.theme);
         let rust = Rc::clone(&new_state.rust);
         let tmpl = Rc::clone(&new_state.tmpl);
         let state = state.clone();
         move || {
             let (code, duration) = convert_source(&rust, &tmpl);
             state.set(Props {
-                theme,
+                theme: Rc::clone(&theme),
                 rust: Rc::clone(&rust),
                 tmpl: Rc::clone(&tmpl),
                 code: Rc::from(code),
