@@ -7,7 +7,7 @@ use rinja_derive_standalone::derive_template;
 use syn::{parse2, parse_quote};
 use web_sys::wasm_bindgen::prelude::Closure;
 use web_sys::wasm_bindgen::JsCast;
-use web_sys::{window, HtmlSelectElement};
+use web_sys::{window, HtmlSelectElement, Storage};
 use yew::{
     function_component, html, use_state, Callback, Event, Html, Properties, SubmitEvent,
     UseStateHandle,
@@ -26,19 +26,60 @@ pub struct Props {
     timeout: Option<i32>,
 }
 
+fn local_storage() -> Option<Storage> {
+    let window = window()?;
+    match window.local_storage() {
+        Ok(storage) => storage,
+        _ => None,
+    }
+}
+
+fn get_data_from_local_storage(storage: &Storage, key: &str) -> Option<String> {
+    let source = storage.get_item(key).ok()??;
+    match json::parse(&source) {
+        Ok(json::JsonValue::String(source)) => Some(source),
+        _ => None,
+    }
+}
+
 #[function_component]
 pub fn App() -> Html {
     let state = use_state(|| {
+        let tmp;
+        let tmp2;
+        let (struct_source, template_source) = if let Some(storage) = local_storage() {
+            let struct_source =
+                match get_data_from_local_storage(&storage, "rinja-app-struct-source") {
+                    Some(source) => {
+                        tmp = source;
+                        &tmp
+                    }
+                    _ => STRUCT_SOURCE,
+                };
+            let template_source =
+                match get_data_from_local_storage(&storage, "rinja-app-template-source") {
+                    Some(source) => {
+                        tmp2 = source;
+                        &tmp2
+                    }
+                    _ => TMPL_SOURCE,
+                };
+            (struct_source, template_source)
+        } else {
+            (STRUCT_SOURCE, TMPL_SOURCE)
+        };
+        let (code, duration) = convert_source(struct_source, template_source);
+
         let theme = ASSETS
             .1
             .iter()
             .position(|&(theme, _)| theme == DEFAULT_THEME)
             .unwrap_or_default();
-        let (code, duration) = convert_source(STRUCT_SOURCE, TMPL_SOURCE);
+
         Props {
             theme,
-            rust: Rc::from(STRUCT_SOURCE),
-            tmpl: Rc::from(TMPL_SOURCE),
+            rust: Rc::from(struct_source),
+            tmpl: Rc::from(template_source),
             code: Rc::from(code),
             duration,
             timeout: None,
@@ -52,17 +93,26 @@ pub fn App() -> Html {
         ev.stop_propagation();
     });
 
-    let oninput = |edit: fn(&mut Props, String)| {
+    let oninput = |storage_name: &'static str, edit: fn(&mut Props, String)| {
         let state = state.clone();
         move |data: String| {
+            if let Some(storage) = local_storage() {
+                // Doesn't matter whether or not it succeeded.
+                let _ = storage.set_item(storage_name, &json::stringify(data.as_str()));
+            }
+
             let mut new_state = Props::clone(&*state);
             edit(&mut new_state, data);
             replace_timeout(&mut new_state, state.clone());
             state.set(new_state);
         }
     };
-    let oninput_rust = oninput(|new_state, data| new_state.rust = Rc::from(data));
-    let oninput_tmpl = oninput(|new_state, data| new_state.tmpl = Rc::from(data));
+    let oninput_rust = oninput("rinja-app-struct-source", |new_state, data| {
+        new_state.rust = Rc::from(data)
+    });
+    let oninput_tmpl = oninput("rinja-app-template-source", |new_state, data| {
+        new_state.tmpl = Rc::from(data)
+    });
 
     let theme_idx = state.theme;
     let (_, themes) = *ASSETS;

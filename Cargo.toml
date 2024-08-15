@@ -9,13 +9,14 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 rinja_derive_standalone = { version = "*", path = "rinja/rinja_derive_standalone", features = ["humansize", "num-traits", "serde_json", "urlencode"] }
 
+json = "0.12"
 once_cell = "1.19.0"
 prettyplease = "0.2.20"
 proc-macro2 = { version = "1.0.86", default-features = false }
 syn = { version = "2.0.72", default-features = false, features = ["full", "parsing", "printing"] }
 syntect = { version = "5.2.0", default-features = false, features = ["parsing", "regex-fancy"] }
 syntect-assets = { version = "0.23.6", default-features = false, features = ["regex-fancy"] }
-web-sys = { version = "0.3.69", features = ["HtmlPreElement", "HtmlSelectElement", "HtmlTextAreaElement", "Performance"] }
+web-sys = { version = "0.3.69", features = ["HtmlPreElement", "HtmlSelectElement", "HtmlTextAreaElement", "Performance", "Storage"] }
 yew = { version = "0.21.0", features = ["csr"] }
 
 [profile.release]
