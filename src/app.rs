@@ -36,8 +36,8 @@ fn local_storage() -> Option<Storage> {
 
 fn get_data_from_local_storage(storage: &Storage, key: &str) -> Option<String> {
     let source = storage.get_item(key).ok()??;
-    match json::parse(&source) {
-        Ok(json::JsonValue::String(source)) => Some(source),
+    match jzon::parse(&source) {
+        Ok(jzon::JsonValue::String(source)) => Some(source),
         _ => None,
     }
 }
@@ -98,7 +98,7 @@ pub fn App() -> Html {
         move |data: String| {
             if let Some(storage) = local_storage() {
                 // Doesn't matter whether or not it succeeded.
-                let _ = storage.set_item(storage_name, &json::stringify(data.as_str()));
+                let _ = storage.set_item(storage_name, &jzon::stringify(data.as_str()));
             }
 
             let mut new_state = Props::clone(&*state);
