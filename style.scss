@@ -3,12 +3,24 @@ html {
 }
 
 body {
-    padding: 0.5em 1em;
+    padding: 0;
+    margin: 0;
     background-color: #eee;
     color: #111;
     color-scheme: light only;
     font-size: 1.6rem;
     line-height: 140%;
+}
+
+#content {
+    padding: 0.5em 1em;
+}
+
+header {
+    padding: 5px;
+    background: #000;
+    display: flex;
+    gap: 5px;
 }
 
 a:is(:link, :visited, :target) {
@@ -104,17 +116,6 @@ textarea {
     }
 }
 
-#rev {
-    float: right;
-    font-size: 80%;
-    color: #666;
-}
-
-#bottom {
-    padding-top: 1em;
-    text-align: center;
-}
-
 #fork {
     position: absolute;
     inset: 0 0 auto auto;
@@ -127,8 +128,8 @@ textarea {
         }
         color: #eee;
         fill: #4c1;
-        width: 3em;
-        height: 3em;
+        width: 4em;
+        height: 4em;
     }
 
     .octo-arm {
@@ -148,4 +149,73 @@ textarea {
             transform: rotate(10deg)
         }
     }
+}
+
+#generated-url {
+    padding: 5px;
+    max-height: 40%;
+    overflow-y: scroll;
+    word-wrap: anywhere;
+    border: 1px solid #000;
+    border-radius: 5px;
+    background: #ececec;
+}
+
+dialog::backdrop {
+    backdrop-filter: blur(2px);
+}
+
+.dropdown-menu {
+    padding-right: 17px;
+    position: relative;
+}
+.dropdown-menu::after {
+    background-image: url('data:image/svg+xml,<svg class="bwriTBp9mt3lT3cYfTnK" height="10" \
+    viewBox="6 8 12 8" width="10" opacity="0.5" xmlns="http://www.w3.org/2000/svg">\
+    <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"></path></svg>');
+    position: absolute;
+    top: 10px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    display: block;
+    content: "";
+}
+button {
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 5px;
+}
+.dropdown-menu > div {
+    display: none;
+    position: absolute;
+    background: #eee;
+    padding: 5px;
+    top: 30px;
+    left: -2px;
+    width: fit-content;
+    z-index: 1;
+    border: 1px solid #000;
+    border-radius: 5px;
+}
+.dropdown-menu.display > div {
+    display: block;
+}
+.dropdown-menu > div label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.dropdown-menu > div a {
+    display: block;
+}
+.revision {
+    margin-top: 5px;
+}
+.dialog-buttons {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
 }

@@ -10,7 +10,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use web_sys::js_sys::{Function, JSON};
 use web_sys::wasm_bindgen::prelude::Closure;
 use web_sys::wasm_bindgen::{JsCast, JsValue};
-use web_sys::{window, HtmlDialogElement, HtmlSelectElement, Storage};
+use web_sys::{window, FocusEvent, HtmlDialogElement, HtmlSelectElement, Storage};
 use yew::{
     function_component, html, use_effect_with, use_state, Callback, Event, Html, MouseEvent,
     Properties, SubmitEvent, UseStateHandle,
@@ -228,124 +228,125 @@ pub fn App() -> Html {
         .collect::<Html>();
 
     html! {
-        <form method="GET" action="javascript:;" {onsubmit}>
-            <div id="top">
+        <div>
+            <header>
+                <button id="settings-menu" type="button" class="dropdown-menu" onclick={|event: MouseEvent| toggle_element(event, "settings-menu") } onblur={|event: FocusEvent| handle_blur(event, "settings-menu")}>
+                    {"Settings"}
+                    <div tabindex="-1" onblur={|event: FocusEvent| handle_blur(event, "settings-menu")}>
+                        <label>
+                            <strong>{"Theme: "}</strong>
+                            <select onchange={onchange_theme} id="theme" onblur={|event: FocusEvent| handle_blur(event, "settings-menu")}>
+                                {themes}
+                            </select>
+                        </label>
+                    </div>
+                </button>
+                <button id="info-menu" type="button" class="dropdown-menu" onclick={|event: MouseEvent| toggle_element(event, "info-menu") } onblur={|event: FocusEvent| handle_blur(event, "info-menu")}>
+                    {"Info"}
+                    <div tabindex="-1" onblur={|event: FocusEvent| handle_blur(event, "info-menu")}>
+                        <a href="https://crates.io/crates/rinja" title="Crates.io">
+                            <img
+                                src="https://img.shields.io/crates/v/rinja?logo=rust&style=flat-square&logoColor=white"
+                                alt="Crates.io"
+                            />
+                        </a>
+                        {" "}
+                        <a
+                            href="https://github.com/rinja-rs/rinja/actions/workflows/rust.yml"
+                            title="GitHub Workflow Status"
+                        >
+                            <img
+                                src="https://img.shields.io/github/actions/workflow/status/rinja-rs/rinja/rust.yml?\
+                                     branch=master&logo=github&style=flat-square&logoColor=white"
+                                alt="GitHub Workflow Status"
+                            />
+                        </a>
+                        {" "}
+                        <a href="https://rinja.readthedocs.io/" title="Book">
+                            <img
+                                src="https://img.shields.io/readthedocs/rinja?label=book&logo=readthedocs&style=flat-square&logoColor=white"
+                                alt="Book"
+                            />
+                        </a>
+                        {" "}
+                        <a href="https://docs.rs/rinja/" title="docs.rs">
+                            <img
+                                src="https://img.shields.io/docsrs/rinja?logo=docsdotrs&style=flat-square&logoColor=white"
+                                alt="docs.rs"
+                            />
+                        </a>
+                        <label class="revision">
+                            <strong>{"Revision: "}</strong>
+                            <a href={TREE_URL} target="_blank" rel="noopener">
+                                <abbr title="Rinja revision">
+                                    {env!("RINJA_DESCR")}
+                                </abbr>
+                            </a>
+                        </label>
+                    </div>
+                </button>
+                <button type="button" onclick={saved_url_open}>
+                    {"share"}
+                </button>
+                <div id="fork">
+                    <a href="https://github.com/rinja-rs/play-rinja" title="Fork me on GitHub">
+                        <svg viewBox="0 0 250 250" aria-hidden="true">
+                            <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z" />
+                            <path fill="currentColor" class="octo-arm" d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" />
+                            <path fill="currentColor" class="octo-body" d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" />
+                        </svg>
+                    </a>
+                </div>
+            </header>
+            <form id="content" method="GET" action="javascript:;" {onsubmit}>
+                <div id="top">
+                    <div>
+                        <h3> {"Your struct:"} </h3>
+                        <Editor
+                            text={Rc::clone(&state.rust)}
+                            oninput={oninput_rust}
+                            syntax="Rust"
+                            id="rust"
+                            {theme}
+                        />
+                    </div>
+                    <div>
+                        <h3> {"Your template:"} </h3>
+                        <Editor
+                            text={Rc::clone(&state.tmpl)}
+                            oninput={oninput_tmpl}
+                            syntax="HTML (Jinja2)"
+                            id="tmpl"
+                            {theme}
+                        />
+                    </div>
+                </div>
                 <div>
-                    <h3> {"Your struct:"} </h3>
+                    <h3>
+                        {"Generated code:"}
+                        {state.duration.map(|d| format!(" (duration: {d:?})"))}
+                    </h3>
                     <Editor
-                        text={Rc::clone(&state.rust)}
-                        oninput={oninput_rust}
+                        text={Rc::clone(&state.code)}
                         syntax="Rust"
-                        id="rust"
+                        id="code"
                         {theme}
                     />
                 </div>
-                <div>
-                    <h3> {"Your template:"} </h3>
-                    <Editor
-                        text={Rc::clone(&state.tmpl)}
-                        oninput={oninput_tmpl}
-                        syntax="HTML (Jinja2)"
-                        id="tmpl"
-                        {theme}
-                    />
-                </div>
-            </div>
-            <div>
-                <h3>
-                    {"Generated code:"}
-                    {state.duration.map(|d| format!(" (duration: {d:?})"))}
-                </h3>
-                <Editor
-                    text={Rc::clone(&state.code)}
-                    syntax="Rust"
-                    id="code"
-                    {theme}
-                />
-            </div>
-            <div id="rev">
-                <a href={TREE_URL} target="_blank" rel="noopener">
-                    <abbr title="Rinja revision">
-                        {env!("RINJA_DESCR")}
-                    </abbr>
-                </a>
-            </div>
-            <div>
-                <label>
-                    <strong> {"Theme: "} </strong>
-                    <select onchange={onchange_theme} id="theme">
-                        {themes}
-                    </select>
-                </label>
-            </div>
-            <div>
-                <label>
-                    <button type="button" onclick={saved_url_open}>
-                        {"share this code"}
-                    </button>
-                </label>
-            </div>
-            <div id="bottom">
-                <a href="https://crates.io/crates/rinja" title="Crates.io">
-                    <img
-                        src="https://img.shields.io/crates/v/rinja?logo=rust&style=flat-square&logoColor=white"
-                        alt="Crates.io"
-                    />
-                </a>
-                {" "}
-                <a
-                    href="https://github.com/rinja-rs/rinja/actions/workflows/rust.yml"
-                    title="GitHub Workflow Status"
-                >
-                    <img
-                        src="https://img.shields.io/github/actions/workflow/status/rinja-rs/rinja/rust.yml?\
-                             branch=master&logo=github&style=flat-square&logoColor=white"
-                        alt="GitHub Workflow Status"
-                    />
-                </a>
-                {" "}
-                <a href="https://rinja.readthedocs.io/" title="Book">
-                    <img
-                        src="https://img.shields.io/readthedocs/rinja?label=book&logo=readthedocs&style=flat-square&logoColor=white"
-                        alt="Book"
-                    />
-                </a>
-                {" "}
-                <a href="https://docs.rs/rinja/" title="docs.rs">
-                    <img
-                        src="https://img.shields.io/docsrs/rinja?logo=docsdotrs&style=flat-square&logoColor=white"
-                        alt="docs.rs"
-                    />
-                </a>
-            </div>
-            <div id="fork">
-                <a href="https://github.com/rinja-rs/play-rinja" title="Fork me on GitHub">
-                    <svg viewBox="0 0 250 250" aria-hidden="true">
-                        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z" />
-                        <path fill="currentColor" class="octo-arm" d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" />
-                        <path fill="currentColor" class="octo-body" d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" />
-                    </svg>
-                </a>
-            </div>
+            </form>
             <dialog id="share_dialog" onclose={saved_url_onclose}>
                 <h3> {"Saved Editor State"} </h3>
-                <p>
-                    <textarea
-                        spellcheck="off"
-                        readonly=true
-                        value={saved_url.as_ref().map(Rc::clone)}
-                    />
-                </p>
-                <p>
+                <p id="generated-url">{saved_url.as_ref().map(Rc::clone)}</p>
+                <div class="dialog-buttons">
                     <button type="button" onclick={saved_url_copy} autofocus=true>
                         {"copy"}
                     </button>
                     <button type="button" onclick={saved_url_close}>
                         {"close"}
                     </button>
-                </p>
+                </div>
             </dialog>
-        </form>
+        </div>
     }
 }
 
@@ -426,4 +427,6 @@ extern "C" {
     fn gen_saved_url(callback: &Function);
     fn read_saved_url(callback: &Function);
     fn save_clipboard(text: &str);
+    fn toggle_element(event: MouseEvent, elementId: &str);
+    fn handle_blur(event: FocusEvent, elementId: &str);
 }
