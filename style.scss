@@ -17,10 +17,10 @@ body {
 }
 
 header {
-    padding: 5px;
+    padding: 0.5rem;
     background: #000;
     display: flex;
-    gap: 5px;
+    gap: 0.5rem;
 }
 
 a:is(:link, :visited, :target) {
@@ -152,70 +152,89 @@ textarea {
 }
 
 #generated-url {
-    padding: 5px;
+    padding: 0.5rem;
     max-height: 40%;
     overflow-y: scroll;
     word-wrap: anywhere;
-    border: 1px solid #000;
-    border-radius: 5px;
+    border: 0.1rem solid #000;
+    border-radius: 0.5rem;
     background: #ececec;
 }
 
-dialog::backdrop {
-    backdrop-filter: blur(2px);
+dialog {
+    border: 0.1rem solid #000;
+    border-radius: 0.5rem;
+    background: #f8f8f8;
+    max-width: 80%;
+
+    &::backdrop {
+        backdrop-filter: blur(2px);
+    }
+
+    .dialog-buttons {
+        display: flex;
+        gap: 1em;
+        align-items: center;
+        justify-content: center;
+    }
 }
 
 .dropdown-menu {
-    padding-right: 17px;
+    padding-right: 1.7rem;
     position: relative;
+
+    &::after {
+        background: {
+            image: url('data:image/svg+xml,<svg class="bwriTBp9mt3lT3cYfTnK" height="10" \
+                viewBox="6 8 12 8" width="10" opacity="0.5" xmlns="http://www.w3.org/2000/svg">\
+                <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"></path></svg>');
+            repeat: no-repeat;
+            size: contain;
+            position: top right;
+        }
+        position: absolute;
+        top: 0.9rem;
+        right: 0.5rem;
+        width: 1rem;
+        height: 1rem;
+        display: block;
+        content: "";
+    }
+
+    &.display > div {
+        display: block;
+    }
+
+    > div {
+        display: none;
+        position: absolute;
+        background: #f8f8f8;
+        padding: 1em;
+        top: 1.8em;
+        left: -0.2rem;
+        width: fit-content;
+        z-index: 1;
+        border: 0.1rem solid #000;
+        border-radius: 0.5rem;
+        width: max-content;
+
+        label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5em;
+        }
+
+        a {
+            display: block;
+            margin: 0.5em auto 0.5em auto;
+        }
+    }
 }
-.dropdown-menu::after {
-    background-image: url('data:image/svg+xml,<svg class="bwriTBp9mt3lT3cYfTnK" height="10" \
-    viewBox="6 8 12 8" width="10" opacity="0.5" xmlns="http://www.w3.org/2000/svg">\
-    <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"></path></svg>');
-    position: absolute;
-    top: 10px;
-    right: 2px;
-    width: 10px;
-    height: 10px;
-    display: block;
-    content: "";
-}
+
 button {
     cursor: pointer;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 5px;
-}
-.dropdown-menu > div {
-    display: none;
-    position: absolute;
-    background: #eee;
-    padding: 5px;
-    top: 30px;
-    left: -2px;
-    width: fit-content;
-    z-index: 1;
-    border: 1px solid #000;
-    border-radius: 5px;
-}
-.dropdown-menu.display > div {
-    display: block;
-}
-.dropdown-menu > div label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.dropdown-menu > div a {
-    display: block;
-}
-.revision {
-    margin-top: 5px;
-}
-.dialog-buttons {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-    justify-content: center;
+    border: 0.1rem solid #ccc;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.8rem;
 }
