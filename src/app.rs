@@ -35,9 +35,9 @@ fn local_storage() -> Option<Storage> {
     }
 }
 
-const THEME_SOURCE_KEY: &str = "theme";
-const STRUCT_SOURCE_KEY: &str = "struct";
-const TMPL_SOURCE_KEY: &str = "template";
+const THEME_SOURCE_KEY: &str = "play-rinja-theme";
+const STRUCT_SOURCE_KEY: &str = "play-rinja-struct";
+const TMPL_SOURCE_KEY: &str = "play-rinja-template";
 
 fn get_data_from_local_storage(storage: &Storage, key: &str) -> Option<String> {
     let text = storage.get_item(key).ok()??;
