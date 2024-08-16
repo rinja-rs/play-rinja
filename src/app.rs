@@ -5,13 +5,14 @@ use prettyplease::unparse;
 use proc_macro2::TokenStream;
 use rinja_derive_standalone::derive_template;
 use syn::{parse2, parse_quote};
-use web_sys::js_sys::JSON;
+use wasm_bindgen::prelude::wasm_bindgen;
+use web_sys::js_sys::{Function, JSON};
 use web_sys::wasm_bindgen::prelude::Closure;
 use web_sys::wasm_bindgen::{JsCast, JsValue};
 use web_sys::{window, HtmlSelectElement, Storage};
 use yew::{
-    function_component, html, use_state, Callback, Event, Html, Properties, SubmitEvent,
-    UseStateHandle,
+    function_component, html, use_effect_with, use_state, Callback, Event, Html, Properties,
+    SubmitEvent, UseStateHandle,
 };
 
 use crate::editor::Editor;
@@ -71,6 +72,45 @@ pub fn App() -> Html {
             duration,
             timeout: None,
         }
+    });
+
+    let read_hash = use_state(|| false);
+    if !*read_hash {
+        read_hash.set(true);
+
+        let state = state.clone();
+        let theme = Rc::clone(&state.theme);
+        let handler =
+            Closure::<dyn Fn(Option<Vec<String>>)>::new(move |value: Option<Vec<String>>| {
+                let Some(value) = value else {
+                    return;
+                };
+                let value: Result<[String; 2], _> = value.try_into();
+                let Ok([rust, tmpl]) = value else {
+                    return;
+                };
+                if state.rust.as_ref() == rust && state.tmpl.as_ref() == tmpl {
+                    return;
+                }
+
+                let (code, duration) = convert_source(&rust, &tmpl);
+                state.set(Props {
+                    theme: Rc::clone(&theme),
+                    rust: rust.into(),
+                    tmpl: tmpl.into(),
+                    code: code.into(),
+                    duration,
+                    timeout: None,
+                });
+            });
+        rinja_read_hash(handler.into_js_value().unchecked_ref());
+    }
+    use_effect_with((), move |_| {
+        let handler: Closure<dyn Fn()> = Closure::new(move || read_hash.set(false));
+        let _ = window().unwrap_at().add_event_listener_with_callback(
+            "hashchange",
+            handler.into_js_value().unchecked_ref(),
+        );
     });
 
     let duration = state.duration.map(|d| format!(" (duration: {d:?})"));
@@ -260,6 +300,8 @@ fn replace_timeout(new_state: &mut Props, state: UseStateHandle<Props>) {
                 duration,
                 timeout: None,
             });
+
+            rinja_update_hash(&rust, &tmpl);
         }
     });
 
@@ -315,3 +357,9 @@ struct HelloWorld<'a> {
     user: &'a str,
     first_visit: bool,
 }"##;
+
+#[wasm_bindgen]
+extern "C" {
+    fn rinja_update_hash(rust: &str, tmpl: &str);
+    fn rinja_read_hash(callback: &Function);
+}
