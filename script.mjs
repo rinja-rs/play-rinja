@@ -84,3 +84,18 @@ window.save_clipboard = function (text) {
         }
     });
 };
+
+window.toggle_element = function(event, elementId) {
+    if (event.target && event.target.id === elementId) {
+        document.getElementById(elementId).classList.toggle("display");
+    }
+};
+
+window.handle_blur = function(event, elementId) {
+    const parent = document.getElementById(elementId);
+    if (!parent.contains(document.activeElement) &&
+        !parent.contains(event.relatedTarget)
+    ) {
+        parent.classList.remove("display");
+    }
+};
