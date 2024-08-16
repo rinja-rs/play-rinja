@@ -230,7 +230,13 @@ pub fn App() -> Html {
     html! {
         <div>
             <header>
-                <button id="settings-menu" type="button" class="dropdown-menu" onclick={|event: MouseEvent| toggle_element(event, "settings-menu") } onblur={|event: FocusEvent| handle_blur(event, "settings-menu")}>
+                <button
+                    id="settings-menu"
+                    type="button"
+                    class="dropdown-menu"
+                    onclick={|event: MouseEvent| toggle_element(event, "settings-menu")}
+                    onblur={|event: FocusEvent| handle_blur(event, "settings-menu")}
+                >
                     {"Settings"}
                     <div tabindex="-1" onblur={|event: FocusEvent| handle_blur(event, "settings-menu")}>
                         <label>
@@ -241,7 +247,13 @@ pub fn App() -> Html {
                         </label>
                     </div>
                 </button>
-                <button id="info-menu" type="button" class="dropdown-menu" onclick={|event: MouseEvent| toggle_element(event, "info-menu") } onblur={|event: FocusEvent| handle_blur(event, "info-menu")}>
+                <button
+                    id="info-menu"
+                    type="button"
+                    class="dropdown-menu"
+                    onclick={|event: MouseEvent| toggle_element(event, "info-menu")}
+                    onblur={|event: FocusEvent| handle_blur(event, "info-menu")}
+                >
                     {"Info"}
                     <div tabindex="-1" onblur={|event: FocusEvent| handle_blur(event, "info-menu")}>
                         <a href="https://crates.io/crates/rinja" title="Crates.io">
@@ -250,43 +262,39 @@ pub fn App() -> Html {
                                 alt="Crates.io"
                             />
                         </a>
-                        {" "}
                         <a
                             href="https://github.com/rinja-rs/rinja/actions/workflows/rust.yml"
                             title="GitHub Workflow Status"
                         >
                             <img
                                 src="https://img.shields.io/github/actions/workflow/status/rinja-rs/rinja/rust.yml?\
-                                     branch=master&logo=github&style=flat-square&logoColor=white"
+                                    branch=master&logo=github&style=flat-square&logoColor=white"
                                 alt="GitHub Workflow Status"
                             />
                         </a>
-                        {" "}
                         <a href="https://rinja.readthedocs.io/" title="Book">
                             <img
                                 src="https://img.shields.io/readthedocs/rinja?label=book&logo=readthedocs&style=flat-square&logoColor=white"
                                 alt="Book"
                             />
                         </a>
-                        {" "}
                         <a href="https://docs.rs/rinja/" title="docs.rs">
                             <img
                                 src="https://img.shields.io/docsrs/rinja?logo=docsdotrs&style=flat-square&logoColor=white"
                                 alt="docs.rs"
                             />
                         </a>
-                        <label class="revision">
-                            <strong>{"Revision: "}</strong>
-                            <a href={TREE_URL} target="_blank" rel="noopener">
-                                <abbr title="Rinja revision">
-                                    {env!("RINJA_DESCR")}
-                                </abbr>
+                        <p>
+                            <strong>{"Rinja Revision:"}</strong>
+                            <br />
+                            <a href={TREE_URL} target="_blank">
+                                {env!("RINJA_DESCR")}
                             </a>
-                        </label>
+                        </p>
                     </div>
                 </button>
                 <button type="button" onclick={saved_url_open}>
-                    {"share"}
+                    {"Share"}
                 </button>
                 <div id="fork">
                     <a href="https://github.com/rinja-rs/play-rinja" title="Fork me on GitHub">
@@ -335,7 +343,7 @@ pub fn App() -> Html {
                 </div>
             </form>
             <dialog id="share_dialog" onclose={saved_url_onclose}>
-                <h3> {"Saved Editor State"} </h3>
+                <h3> {"Editor State URL"} </h3>
                 <p id="generated-url">{saved_url.as_ref().map(Rc::clone)}</p>
                 <div class="dialog-buttons">
                     <button type="button" onclick={saved_url_copy} autofocus=true>
