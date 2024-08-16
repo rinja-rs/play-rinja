@@ -52,10 +52,10 @@ pub fn App() -> Html {
             let value = local_storage
                 .as_ref()
                 .and_then(|ls| get_data_from_local_storage(ls, key));
-            Rc::from(match value.as_deref().unwrap_or_default() {
-                "" => default,
-                value => value,
-            })
+            match value.as_deref() {
+                Some(value) => value.into(),
+                None => default.into(),
+            }
         };
 
         let theme = local_storage_or(DEFAULT_THEME, THEME_SOURCE_KEY);
