@@ -17,6 +17,8 @@ pub struct EditorProps {
     pub theme: &'static Theme,
     #[prop_or_default]
     pub oninput: Option<Callback<String>>,
+    #[prop_or_default]
+    pub id: Option<&'static str>,
 }
 
 #[function_component]
@@ -26,10 +28,11 @@ pub fn Editor(props: &EditorProps) -> Html {
         syntax,
         theme,
         oninput,
+        id,
     } = props;
     html! {
         <div class="editor">
-            <UnstylizedCode text={Rc::clone(text)} theme={*theme} {oninput} />
+            <UnstylizedCode text={Rc::clone(text)} theme={*theme} {oninput} {id} />
             <StylizedCode text={Rc::clone(text)} syntax={*syntax} theme={*theme} />
         </div>
     }
@@ -41,6 +44,8 @@ pub struct UnstylizedCodeProps {
     pub theme: &'static Theme,
     #[prop_or_default]
     pub oninput: Option<Callback<String>>,
+    #[prop_or_default]
+    pub id: Option<&'static str>,
 }
 
 #[function_component]
@@ -72,9 +77,17 @@ pub fn UnstylizedCode(props: &UnstylizedCodeProps) -> Html {
             readonly={oninput.is_none()}
             value={Rc::clone(&props.text)}
             style={format!("caret-color:#{:02x}{:02x}{:02x};", caret.r, caret.b, caret.b)}
+            id={props.id}
             {oninput}
         />
     }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct StylizedCodeProps {
+    pub text: Rc<str>,
+    pub syntax: &'static str,
+    pub theme: &'static Theme,
 }
 
 #[function_component]
@@ -150,13 +163,6 @@ pub fn StylizedCode(props: &StylizedCodeProps) -> Html {
             {"\u{feff}"} {output} {"\u{feff}"}
         </pre>
     }
-}
-
-#[derive(Properties, PartialEq)]
-pub struct StylizedCodeProps {
-    pub text: Rc<str>,
-    pub syntax: &'static str,
-    pub theme: &'static Theme,
 }
 
 fn write_css_color(s: &mut String, c: Color) {
