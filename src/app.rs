@@ -1,6 +1,7 @@
 use std::rc::Rc;
 use std::time::Duration;
 
+use gloo_utils::document;
 use prettyplease::unparse;
 use proc_macro2::TokenStream;
 use rinja_derive_standalone::derive_template;
@@ -9,10 +10,10 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use web_sys::js_sys::{Function, JSON};
 use web_sys::wasm_bindgen::prelude::Closure;
 use web_sys::wasm_bindgen::{JsCast, JsValue};
-use web_sys::{window, HtmlSelectElement, Storage};
+use web_sys::{window, HtmlDialogElement, HtmlSelectElement, Storage};
 use yew::{
-    function_component, html, use_effect_with, use_state, Callback, Event, Html, Properties,
-    SubmitEvent, UseStateHandle,
+    function_component, html, use_effect_with, use_state, Callback, Event, Html, MouseEvent,
+    Properties, SubmitEvent, UseStateHandle,
 };
 
 use crate::editor::Editor;
@@ -45,6 +46,15 @@ fn get_data_from_local_storage(storage: &Storage, key: &str) -> Option<String> {
     JSON::parse(&text).ok()?.as_string()
 }
 
+fn save_to_local_storage(storage: &Storage, key: &str, data: &str) {
+    if let Ok(data) = JSON::stringify(&JsValue::from_str(data)) {
+        if let Some(data) = data.as_string() {
+            // Doesn't matter whether or not it succeeded.
+            let _ = storage.set_item(key, &data);
+        }
+    }
+}
+
 #[function_component]
 pub fn App() -> Html {
     let state = use_state(|| {
@@ -74,46 +84,75 @@ pub fn App() -> Html {
         }
     });
 
-    let read_hash = use_state(|| false);
-    if !*read_hash {
-        read_hash.set(true);
+    // share_dialog
+    let (saved_url, saved_url_open, saved_url_onclose, saved_url_close, saved_url_copy);
+    #[allow(clippy::let_unit_value)]
+    let _ = {
+        use_effect_with((), {
+            let state = state.clone();
+            move |_| {
+                let callback: Closure<dyn Fn(Option<String>, Option<String>)> =
+                    Closure::new(move |rust: Option<String>, tmpl: Option<String>| {
+                        let (Some(rust), Some(tmpl)) = (rust, tmpl) else {
+                            return;
+                        };
+                        if let Some(storage) = local_storage() {
+                            // Doesn't matter whether or not it succeeded.
+                            let _ = save_to_local_storage(&storage, STRUCT_SOURCE_KEY, &rust);
+                            let _ = save_to_local_storage(&storage, TMPL_SOURCE_KEY, &tmpl);
+                        }
+                        let (code, duration) = convert_source(&rust, &tmpl);
+                        state.set(Props {
+                            theme: Rc::clone(&state.theme),
+                            rust: Rc::from(rust),
+                            tmpl: Rc::from(tmpl),
+                            code: Rc::from(code),
+                            duration,
+                            timeout: None,
+                        });
+                    });
+                read_saved_url(callback.into_js_value().unchecked_ref());
+            }
+        });
 
-        let state = state.clone();
-        let theme = Rc::clone(&state.theme);
-        let handler =
-            Closure::<dyn Fn(Option<Vec<String>>)>::new(move |value: Option<Vec<String>>| {
-                let Some(value) = value else {
-                    return;
-                };
-                let value: Result<[String; 2], _> = value.try_into();
-                let Ok([rust, tmpl]) = value else {
-                    return;
-                };
-                if state.rust.as_ref() == rust && state.tmpl.as_ref() == tmpl {
-                    return;
-                }
+        saved_url = use_state(|| Option::<Rc<str>>::None);
 
-                let (code, duration) = convert_source(&rust, &tmpl);
-                state.set(Props {
-                    theme: Rc::clone(&theme),
-                    rust: rust.into(),
-                    tmpl: tmpl.into(),
-                    code: code.into(),
-                    duration,
-                    timeout: None,
-                });
-            });
-        rinja_read_hash(handler.into_js_value().unchecked_ref());
-    }
-    use_effect_with((), move |_| {
-        let handler: Closure<dyn Fn()> = Closure::new(move || read_hash.set(false));
-        let _ = window().unwrap_at().add_event_listener_with_callback(
-            "hashchange",
-            handler.into_js_value().unchecked_ref(),
-        );
-    });
+        saved_url_open = {
+            let saved_url = saved_url.clone();
+            move |_: MouseEvent| {
+                let saved_url = saved_url.clone();
+                let callback: Closure<dyn Fn(Option<String>)> =
+                    Closure::new(move |url: Option<String>| {
+                        saved_url.set(url.map(Rc::from));
+                    });
+                gen_saved_url(callback.into_js_value().unchecked_ref());
+            }
+        };
 
-    let duration = state.duration.map(|d| format!(" (duration: {d:?})"));
+        saved_url_onclose = {
+            let saved_url = saved_url.clone();
+            move |_: Event| saved_url.set(None)
+        };
+
+        saved_url_close = move |_: MouseEvent| {
+            if let Some(share_dialog) = document().get_element_by_id("share_dialog") {
+                let share_dialog: HtmlDialogElement = share_dialog.unchecked_into();
+                let _ = share_dialog.close();
+            }
+        };
+
+        saved_url_copy = saved_url
+            .as_ref()
+            .map(Rc::clone)
+            .map(|saved_url| move |_: MouseEvent| save_clipboard(&saved_url));
+
+        if saved_url.is_some() {
+            if let Some(share_dialog) = document().get_element_by_id("share_dialog") {
+                let share_dialog: HtmlDialogElement = share_dialog.unchecked_into();
+                let _ = share_dialog.show_modal();
+            }
+        }
+    };
 
     let onsubmit = Callback::from(|ev: SubmitEvent| {
         ev.prevent_default();
@@ -124,14 +163,8 @@ pub fn App() -> Html {
         let state = state.clone();
         move |data: String| {
             if let Some(storage) = local_storage() {
-                if let Ok(data) = JSON::stringify(&JsValue::from_str(&data)) {
-                    if let Some(data) = data.as_string() {
-                        // Doesn't matter whether or not it succeeded.
-                        let _ = storage.set_item(storage_name, &data);
-                    }
-                }
+                save_to_local_storage(&storage, storage_name, &data);
             }
-
             let mut new_state = Props::clone(&*state);
             edit(&mut new_state, data);
             replace_timeout(&mut new_state, state.clone());
@@ -155,8 +188,7 @@ pub fn App() -> Html {
             let data = target.value();
 
             if let Some(storage) = local_storage() {
-                // Doesn't matter whether or not it succeeded.
-                let _ = storage.set_item(THEME_SOURCE_KEY, &data);
+                save_to_local_storage(&storage, THEME_SOURCE_KEY, &data);
             }
             state.set(Props {
                 theme: data.into(),
@@ -204,6 +236,7 @@ pub fn App() -> Html {
                         text={Rc::clone(&state.rust)}
                         oninput={oninput_rust}
                         syntax="Rust"
+                        id="rust"
                         {theme}
                     />
                 </div>
@@ -213,15 +246,20 @@ pub fn App() -> Html {
                         text={Rc::clone(&state.tmpl)}
                         oninput={oninput_tmpl}
                         syntax="HTML (Jinja2)"
+                        id="tmpl"
                         {theme}
                     />
                 </div>
             </div>
             <div>
-                <h3> {"Generated code:"} {duration} </h3>
+                <h3>
+                    {"Generated code:"}
+                    {state.duration.map(|d| format!(" (duration: {d:?})"))}
+                </h3>
                 <Editor
                     text={Rc::clone(&state.code)}
                     syntax="Rust"
+                    id="code"
                     {theme}
                 />
             </div>
@@ -235,7 +273,16 @@ pub fn App() -> Html {
             <div>
                 <label>
                     <strong> {"Theme: "} </strong>
-                    <select onchange={onchange_theme}> {themes} </select>
+                    <select onchange={onchange_theme} id="theme">
+                        {themes}
+                    </select>
+                </label>
+            </div>
+            <div>
+                <label>
+                    <button type="button" onclick={saved_url_open}>
+                        {"share this code"}
+                    </button>
                 </label>
             </div>
             <div id="bottom">
@@ -280,6 +327,24 @@ pub fn App() -> Html {
                     </svg>
                 </a>
             </div>
+            <dialog id="share_dialog" onclose={saved_url_onclose}>
+                <h3> {"Saved Editor State"} </h3>
+                <p>
+                    <textarea
+                        spellcheck="off"
+                        readonly=true
+                        value={saved_url.as_ref().map(Rc::clone)}
+                    />
+                </p>
+                <p>
+                    <button type="button" onclick={saved_url_copy} autofocus=true>
+                        {"copy"}
+                    </button>
+                    <button type="button" onclick={saved_url_close}>
+                        {"close"}
+                    </button>
+                </p>
+            </dialog>
         </form>
     }
 }
@@ -300,8 +365,6 @@ fn replace_timeout(new_state: &mut Props, state: UseStateHandle<Props>) {
                 duration,
                 timeout: None,
             });
-
-            rinja_update_hash(&rust, &tmpl);
         }
     });
 
@@ -360,6 +423,7 @@ struct HelloWorld<'a> {
 
 #[wasm_bindgen]
 extern "C" {
-    fn rinja_update_hash(rust: &str, tmpl: &str);
-    fn rinja_read_hash(callback: &Function);
+    fn gen_saved_url(callback: &Function);
+    fn read_saved_url(callback: &Function);
+    fn save_clipboard(text: &str);
 }
