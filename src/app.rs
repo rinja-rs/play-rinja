@@ -5,8 +5,9 @@ use prettyplease::unparse;
 use proc_macro2::TokenStream;
 use rinja_derive_standalone::derive_template;
 use syn::{parse2, parse_quote};
+use web_sys::js_sys::JSON;
 use web_sys::wasm_bindgen::prelude::Closure;
-use web_sys::wasm_bindgen::JsCast;
+use web_sys::wasm_bindgen::{JsCast, JsValue};
 use web_sys::{window, HtmlSelectElement, Storage};
 use yew::{
     function_component, html, use_state, Callback, Event, Html, Properties, SubmitEvent,
@@ -39,7 +40,8 @@ const STRUCT_SOURCE_KEY: &str = "struct";
 const TMPL_SOURCE_KEY: &str = "template";
 
 fn get_data_from_local_storage(storage: &Storage, key: &str) -> Option<String> {
-    storage.get_item(key).ok()?
+    let text = storage.get_item(key).ok()??;
+    JSON::parse(&text).ok()?.as_string()
 }
 
 #[function_component]
@@ -82,8 +84,12 @@ pub fn App() -> Html {
         let state = state.clone();
         move |data: String| {
             if let Some(storage) = local_storage() {
-                // Doesn't matter whether or not it succeeded.
-                let _ = storage.set_item(storage_name, &data);
+                if let Ok(data) = JSON::stringify(&JsValue::from_str(&data)) {
+                    if let Some(data) = data.as_string() {
+                        // Doesn't matter whether or not it succeeded.
+                        let _ = storage.set_item(storage_name, &data);
+                    }
+                }
             }
 
             let mut new_state = Props::clone(&*state);
