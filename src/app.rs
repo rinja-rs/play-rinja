@@ -309,7 +309,12 @@ pub fn App() -> Html {
             <form id="content" method="GET" action="javascript:;" {onsubmit}>
                 <div id="top">
                     <div>
-                        <h3> {"Your struct:"} </h3>
+                        <h3>
+                            <button class="reset" onclick={|event| reset_code(event, STRUCT_SOURCE)}>
+                                {"Reset code"}
+                            </button>
+                            {"Your struct:"}
+                        </h3>
                         <Editor
                             text={Rc::clone(&state.rust)}
                             oninput={oninput_rust}
@@ -319,7 +324,12 @@ pub fn App() -> Html {
                         />
                     </div>
                     <div>
-                        <h3> {"Your template:"} </h3>
+                        <h3>
+                            <button class="reset" onclick={|event| reset_code(event, TMPL_SOURCE)}>
+                                {"Reset code"}
+                            </button>
+                            {"Your template:"}
+                        </h3>
                         <Editor
                             text={Rc::clone(&state.tmpl)}
                             oninput={oninput_tmpl}
@@ -437,4 +447,5 @@ extern "C" {
     fn save_clipboard(text: &str);
     fn toggle_element(event: MouseEvent, elementId: &str);
     fn handle_blur(event: FocusEvent, elementId: &str);
+    fn reset_code(event: MouseEvent, text: &str);
 }

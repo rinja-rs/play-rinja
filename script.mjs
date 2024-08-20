@@ -99,3 +99,9 @@ window.handle_blur = function(event, elementId) {
         parent.classList.remove("display");
     }
 };
+
+window.reset_code = function(event, text) {
+    const input = event.target.parentElement.parentElement.querySelector("textarea");
+    input.value = text;
+    input.dispatchEvent(new Event("input"));
+};
