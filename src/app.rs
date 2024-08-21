@@ -20,7 +20,7 @@ use crate::editor::Editor;
 use crate::{ThrowAt, ASSETS};
 
 #[derive(Properties, PartialEq, Clone)]
-pub struct Props {
+struct Props {
     theme: Rc<str>,
     rust: Rc<str>,
     tmpl: Rc<str>,
@@ -29,50 +29,13 @@ pub struct Props {
     timeout: Option<i32>,
 }
 
-fn local_storage() -> Option<Storage> {
-    let window = window()?;
-    match window.local_storage() {
-        Ok(storage) => storage,
-        _ => None,
-    }
-}
-
-const THEME_SOURCE_KEY: &str = "play-rinja-theme";
-const STRUCT_SOURCE_KEY: &str = "play-rinja-struct";
-const TMPL_SOURCE_KEY: &str = "play-rinja-template";
-
-fn get_data_from_local_storage(storage: &Storage, key: &str) -> Option<String> {
-    let text = storage.get_item(key).ok()??;
-    JSON::parse(&text).ok()?.as_string()
-}
-
-fn save_to_local_storage(storage: &Storage, key: &str, data: &str) {
-    if let Ok(data) = JSON::stringify(&JsValue::from_str(data)) {
-        if let Some(data) = data.as_string() {
-            // Doesn't matter whether or not it succeeded.
-            let _ = storage.set_item(key, &data);
-        }
-    }
-}
-
 #[function_component]
 pub fn App() -> Html {
     let state = use_state(|| {
-        let local_storage = local_storage();
-        let local_storage_or = |default: &str, key: &str| -> Rc<str> {
-            let value = local_storage
-                .as_ref()
-                .and_then(|ls| get_data_from_local_storage(ls, key));
-            match value.as_deref() {
-                Some(value) => value.into(),
-                None => default.into(),
-            }
-        };
-
-        let theme = local_storage_or(DEFAULT_THEME, THEME_SOURCE_KEY);
-        let rust = local_storage_or(STRUCT_SOURCE, STRUCT_SOURCE_KEY);
-        let tmpl = local_storage_or(TMPL_SOURCE, TMPL_SOURCE_KEY);
-
+        let (theme, rust, tmpl) = get_last_editor_state().unwrap_or_default();
+        let theme = theme.unwrap_or_else(|| Rc::from(DEFAULT_THEME));
+        let rust = rust.unwrap_or_else(|| Rc::from(STRUCT_SOURCE));
+        let tmpl = tmpl.unwrap_or_else(|| Rc::from(TMPL_SOURCE));
         let (code, duration) = convert_source(&rust, &tmpl);
         Props {
             theme,
@@ -366,6 +329,80 @@ pub fn App() -> Html {
             </dialog>
         </div>
     }
+}
+
+const THEME_SOURCE_KEY: &str = "play-rinja-theme";
+const STRUCT_SOURCE_KEY: &str = "play-rinja-struct";
+const TMPL_SOURCE_KEY: &str = "play-rinja-template";
+
+fn local_storage() -> Option<Storage> {
+    let window = window()?;
+    match window.local_storage() {
+        Ok(storage) => storage,
+        _ => None,
+    }
+}
+
+fn save_to_local_storage(storage: &Storage, key: &str, data: &str) {
+    if let Ok(data) = JSON::stringify(&JsValue::from_str(data)) {
+        if let Some(data) = data.as_string() {
+            // Doesn't matter whether or not it succeeded.
+            let _ = storage.set_item(key, &data);
+        }
+    }
+}
+
+// Read last editor state from local storage.
+// Then delete the known editor state.
+// Then, if the app did not crash while processing the retrieved state, save it again.
+fn get_last_editor_state() -> Option<(Option<Rc<str>>, Option<Rc<str>>, Option<Rc<str>>)> {
+    let window = window()?;
+    let storage = window.local_storage().ok().flatten()?;
+
+    let mut theme = None;
+    let mut rust = None;
+    let mut tmpl = None;
+    let mut raw_theme = None;
+    let mut raw_rust = None;
+    let mut raw_tmpl = None;
+
+    for (key, raw_dest, dest) in [
+        (THEME_SOURCE_KEY, &mut raw_theme, &mut theme),
+        (STRUCT_SOURCE_KEY, &mut raw_rust, &mut rust),
+        (TMPL_SOURCE_KEY, &mut raw_tmpl, &mut tmpl),
+    ] {
+        let Some(raw) = storage.get_item(key).ok().flatten() else {
+            continue;
+        };
+        let _ = storage.remove_item(key);
+        let Some(parsed) = JSON::parse(&raw).ok().and_then(|s| s.as_string()) else {
+            continue;
+        };
+        *raw_dest = Some(raw);
+        *dest = Some(Rc::from(parsed));
+    }
+    if theme.is_none() && rust.is_none() && theme.is_none() {
+        return None;
+    }
+
+    let callback = Closure::once(move || {
+        if crate::PANICKED.load(std::sync::atomic::Ordering::Acquire) {
+            return;
+        }
+
+        for (key, value) in [
+            (THEME_SOURCE_KEY, raw_theme.take()),
+            (STRUCT_SOURCE_KEY, raw_rust.take()),
+            (TMPL_SOURCE_KEY, raw_tmpl.take()),
+        ] {
+            if let Some(value) = value {
+                let _ = storage.set_item(key, &value);
+            }
+        }
+    });
+    let _ = window.set_timeout_with_callback(callback.into_js_value().unchecked_ref());
+
+    Some((theme, rust, tmpl))
 }
 
 fn replace_timeout(new_state: &mut Props, state: UseStateHandle<Props>) {
