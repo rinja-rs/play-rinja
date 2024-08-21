@@ -85,23 +85,46 @@ window.save_clipboard = function (text) {
     });
 };
 
-window.toggle_element = function(event, elementId) {
+window.toggle_element = function (event, elementId) {
     if (event.target && event.target.id === elementId) {
         document.getElementById(elementId).classList.toggle("display");
     }
 };
 
-window.handle_blur = function(event, elementId) {
+window.handle_blur = function (event, elementId) {
     const parent = document.getElementById(elementId);
-    if (!parent.contains(document.activeElement) &&
+    if (
+        !parent.contains(document.activeElement) &&
         !parent.contains(event.relatedTarget)
     ) {
         parent.classList.remove("display");
     }
 };
 
-window.reset_code = function(event, text) {
-    const input = event.target.parentElement.parentElement.querySelector("textarea");
+window.reset_code = function (event, text) {
+    const input =
+        event.target.parentElement.parentElement.querySelector("textarea");
     input.value = text;
     input.dispatchEvent(new Event("input"));
+};
+
+const state = history.state || {};
+const reload_counter = +state.reload_counter || 0;
+if (reload_counter > 0) {
+    console.warn("reload_counter: ", reload_counter);
+}
+state.reload_counter = 0;
+history.replaceState(state, "");
+
+window.panic_reload = function () {
+    state.reload_counter = reload_counter + 1;
+    history.replaceState(state, "");
+    window.setTimeout(function () {
+        if (reload_counter > 2) {
+            console.warn("Hit a panic. Three times.");
+        } else {
+            console.warn("Hit a panic, reloading.");
+            window.location.reload();
+        }
+    }, 0);
 };

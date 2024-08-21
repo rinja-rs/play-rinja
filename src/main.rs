@@ -1,20 +1,37 @@
 mod app;
 mod editor;
 
-use std::panic::Location;
+use std::panic::{Location, PanicInfo};
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering::{Relaxed, SeqCst};
 
 use once_cell::sync::Lazy;
 use syntect::highlighting::Theme;
 use syntect::parsing::SyntaxSet;
 use syntect_assets::assets::HighlightingAssets;
+use wasm_bindgen::prelude::wasm_bindgen;
 use web_sys::js_sys::Error;
 use web_sys::wasm_bindgen::throw_val;
 
 use crate::app::App;
 
 fn main() {
+    yew::set_custom_panic_hook({
+        Box::new(move |info: &PanicInfo| {
+            if PANICKED
+                .compare_exchange(false, true, SeqCst, Relaxed)
+                .is_ok()
+            {
+                panic_reload();
+            }
+            console_error_panic_hook::hook(info);
+        })
+    });
+
     yew::Renderer::<App>::new().render();
 }
+
+static PANICKED: AtomicBool = AtomicBool::new(false);
 
 trait ThrowAt<T> {
     fn unwrap_at(self) -> T;
@@ -72,3 +89,8 @@ static ASSETS: Lazy<(&SyntaxSet, &[(&str, &Theme)])> = Lazy::new(|| {
     let syntax_set = assets.get_syntax_set().unwrap_at();
     (syntax_set, themes)
 });
+
+#[wasm_bindgen]
+extern "C" {
+    fn panic_reload();
+}
