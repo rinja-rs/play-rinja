@@ -336,11 +336,7 @@ const STRUCT_SOURCE_KEY: &str = "play-rinja-struct";
 const TMPL_SOURCE_KEY: &str = "play-rinja-template";
 
 fn local_storage() -> Option<Storage> {
-    let window = window()?;
-    match window.local_storage() {
-        Ok(storage) => storage,
-        _ => None,
-    }
+    window()?.local_storage().unwrap_or_default()
 }
 
 fn save_to_local_storage(storage: &Storage, key: &str, data: &str) {
