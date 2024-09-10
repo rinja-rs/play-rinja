@@ -1,4 +1,10 @@
 [licenses]
 version = 2
-allow = ["Apache-2.0", "BSD-2-Clause", "MIT", "Unicode-DFS-2016"]
+allow = ["Apache-2.0", "MIT", "Unicode-DFS-2016"]
 private = { ignore = true }
+
+[advisories]
+ignore = [
+    # `proc-macro-error` is unmaintained, but still used in yew
+    "RUSTSEC-2024-0370",
+]
