@@ -1,7 +1,6 @@
 use std::rc::Rc;
 use std::time::Duration;
 
-use gloo_utils::document;
 use prettyplease::unparse;
 use proc_macro2::TokenStream;
 use rinja_derive_standalone::derive_template;
@@ -98,8 +97,7 @@ pub fn App() -> Html {
         };
 
         saved_url_close = move |_: MouseEvent| {
-            if let Some(share_dialog) = document().get_element_by_id("share_dialog") {
-                let share_dialog: HtmlDialogElement = share_dialog.unchecked_into();
+            if let Some(share_dialog) = share_dialog() {
                 let _ = share_dialog.close();
             }
         };
@@ -110,7 +108,7 @@ pub fn App() -> Html {
             .map(|saved_url| move |_: MouseEvent| save_clipboard(&saved_url));
 
         if saved_url.is_some() {
-            if let Some(share_dialog) = document().get_element_by_id("share_dialog") {
+            if let Some(share_dialog) = share_dialog() {
                 let share_dialog: HtmlDialogElement = share_dialog.unchecked_into();
                 let _ = share_dialog.show_modal();
             }
@@ -346,6 +344,15 @@ fn save_to_local_storage(storage: &Storage, key: &str, data: &str) {
             let _ = storage.set_item(key, &data);
         }
     }
+}
+
+fn share_dialog() -> Option<HtmlDialogElement> {
+    Some(
+        window()?
+            .document()?
+            .get_element_by_id("share_dialog")?
+            .unchecked_into(),
+    )
 }
 
 // Read last editor state from local storage.
