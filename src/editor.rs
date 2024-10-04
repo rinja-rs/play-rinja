@@ -4,11 +4,11 @@ use std::rc::Rc;
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Color, FontStyle, Theme};
 use syntect::util::LinesWithEndings;
-use web_sys::wasm_bindgen::JsCast;
 use web_sys::HtmlTextAreaElement;
-use yew::{function_component, html, Callback, Html, InputEvent, Properties};
+use web_sys::wasm_bindgen::JsCast;
+use yew::{Callback, Html, InputEvent, Properties, function_component, html};
 
-use crate::{ThrowAt, ASSETS};
+use crate::{ASSETS, ThrowAt};
 
 #[derive(Properties, PartialEq)]
 pub struct EditorProps {

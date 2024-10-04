@@ -4,19 +4,19 @@ use std::time::Duration;
 use prettyplease::unparse;
 use proc_macro2::TokenStream;
 use rinja_derive_standalone::derive_template;
-use syn::{parse2, parse_quote};
+use syn::{parse_quote, parse2};
 use wasm_bindgen::prelude::wasm_bindgen;
 use web_sys::js_sys::{Function, JSON};
 use web_sys::wasm_bindgen::prelude::Closure;
 use web_sys::wasm_bindgen::{JsCast, JsValue};
-use web_sys::{window, FocusEvent, HtmlDialogElement, HtmlSelectElement, Storage};
+use web_sys::{FocusEvent, HtmlDialogElement, HtmlSelectElement, Storage, window};
 use yew::{
-    function_component, html, use_effect_with, use_state, Callback, Event, Html, MouseEvent,
-    Properties, SubmitEvent, UseStateHandle,
+    Callback, Event, Html, MouseEvent, Properties, SubmitEvent, UseStateHandle, function_component,
+    html, use_effect_with, use_state,
 };
 
 use crate::editor::Editor;
-use crate::{ThrowAt, ASSETS};
+use crate::{ASSETS, ThrowAt};
 
 #[derive(Properties, PartialEq, Clone)]
 struct Props {
