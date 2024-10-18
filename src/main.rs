@@ -1,7 +1,7 @@
 mod app;
 mod editor;
 
-use std::panic::{Location, PanicInfo};
+use std::panic::{Location, PanicHookInfo};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::{Relaxed, SeqCst};
 
@@ -17,7 +17,7 @@ use crate::app::App;
 
 fn main() {
     yew::set_custom_panic_hook({
-        Box::new(move |info: &PanicInfo| {
+        Box::new(move |info: &PanicHookInfo<'_>| {
             if PANICKED
                 .compare_exchange(false, true, SeqCst, Relaxed)
                 .is_ok()
