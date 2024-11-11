@@ -1,10 +1,16 @@
+trunk-version = "^0.21.4"
+
 [build]
+target = "index.html"
+dist = "dist"
 public_url = "./"
 inject_scripts = true
+minify = "on_release"
 
 [tools]
 sass = "1.69.5"
+wasm_bindgen = "0.2.95"
+wasm_opt = "version_119"
 
 [clean]
-dist = "dist"
 cargo = true

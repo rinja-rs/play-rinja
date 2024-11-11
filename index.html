@@ -16,6 +16,15 @@
     <link data-trunk rel="css" href="modern-normalize.css" />
     <link data-trunk rel="css" href="hack-font.css" />
     <link data-trunk rel="scss" href="style.scss" />
-    <link data-trunk rel="rust" />
   </head>
+  <body>
+    <link
+      data-trunk
+      rel="rust"
+      data-wasm-opt="z"
+      data-wasm-opt-params="--enable-bulk-memory"
+      data-type="worker"
+      data-bindgen-target="web"
+    />
+  </body>
 </html>
