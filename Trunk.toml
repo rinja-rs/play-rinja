@@ -8,9 +8,9 @@ inject_scripts = true
 minify = "on_release"
 
 [tools]
-sass = "1.69.5"
-wasm_bindgen = "0.2.95"
-wasm_opt = "version_119"
+sass = "1.83.0"
+wasm_bindgen = "0.2.99"
+wasm_opt = "version_121"
 
 [clean]
 cargo = true
