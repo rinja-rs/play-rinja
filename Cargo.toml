@@ -11,12 +11,12 @@ rinja_derive_standalone = { version = "*", path = "rinja/rinja_derive_standalone
 
 console_error_panic_hook = "0.1.7"
 once_cell = "1.20.2"
-prettyplease = "0.2.25"
-proc-macro2 = { version = "1.0.92", default-features = false }
-syn = { version = "2.0.92", default-features = false, features = ["full", "parsing", "printing"] }
+prettyplease = "0.2.29"
+proc-macro2 = { version = "1.0.93", default-features = false }
+syn = { version = "2.0.96", default-features = false, features = ["full", "parsing", "printing"] }
 syntect = { version = "5.2.0", default-features = false, features = ["parsing", "regex-fancy"] }
 syntect-assets = { version = "0.23.6", default-features = false, features = ["regex-fancy"] }
-wasm-bindgen = "0.2.99"
+wasm-bindgen = "0.2.100"
 yew = { version = "0.21.0", features = ["csr"] }
 
 [dependencies.web-sys]

@@ -1,4 +1,4 @@
-trunk-version = "^0.21.4"
+trunk-version = "^0.21.7"
 
 [build]
 target = "index.html"
@@ -8,8 +8,8 @@ inject_scripts = true
 minify = "on_release"
 
 [tools]
-sass = "1.83.0"
-wasm_bindgen = "0.2.99"
+sass = "1.83.4"
+wasm_bindgen = "0.2.100"
 wasm_opt = "version_121"
 
 [clean]
