@@ -8,9 +8,11 @@ fn main() {
     rinja.push("rinja");
 
     println!("cargo::rerun-if-changed=.git/modules/rinja/refs/heads/master");
-    git_run("RINJA_DESCR", &rinja, [
-        "describe", "--tags", "--long", "HEAD",
-    ]);
+    git_run(
+        "RINJA_DESCR",
+        &rinja,
+        ["describe", "--tags", "--long", "HEAD"],
+    );
     git_run("RINJA_REV", &rinja, ["rev-parse", "HEAD"]);
 
     println!("cargo::rerun-if-changed=.git/modules/rinja/config");
